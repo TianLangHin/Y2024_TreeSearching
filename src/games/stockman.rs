@@ -85,7 +85,7 @@ impl GameHandler<StockmanPos> for StockmanHandler {
         }
     }
 
-    fn evaluate(&self, pos: StockmanPos) -> Self::Eval {
+    fn evaluate(&self, pos: StockmanPos, _depth: usize, _max_depth: usize) -> Self::Eval {
         match pos.node {
             16 => 30,
             17 => 54,

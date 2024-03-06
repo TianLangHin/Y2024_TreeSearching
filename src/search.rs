@@ -18,7 +18,7 @@ where
     // A node `max_depth` plies ahead of the root is considered a leaf.
     // Statement 5.
     if depth == 0 {
-        return handler.evaluate(pos);
+        return handler.evaluate(pos, depth, max_depth);
     }
 
     // Statement 4.
@@ -58,7 +58,7 @@ where
         m
     } else {
         // Statement 5.
-        handler.evaluate(pos)
+        handler.evaluate(pos, depth, max_depth)
     }
 }
 
@@ -78,7 +78,7 @@ where
     // A node `max_depth` plies ahead of the root is considered a leaf.
     // Statement 5.
     if depth == 0 {
-        return handler.evaluate(pos);
+        return handler.evaluate(pos, depth, max_depth);
     }
 
     // Statement 4.
@@ -119,7 +119,7 @@ where
         m
     } else {
         // Statement 5.
-        handler.evaluate(pos)
+        handler.evaluate(pos, depth, max_depth)
     }
 }
 
@@ -137,7 +137,7 @@ where
     // A node `max_depth` plies ahead of the root is considered a leaf.
     // Statement 5.
     if depth == 0 {
-        return handler.evaluate(pos);
+        return handler.evaluate(pos, depth, max_depth);
     }
 
     // Statement 4.
@@ -184,7 +184,7 @@ where
         m
     } else {
         // Statement 5.
-        handler.evaluate(pos)
+        handler.evaluate(pos, depth, max_depth)
     }
 }
 
@@ -203,7 +203,7 @@ where
     // A node `max_depth` plies ahead of the root is considered a leaf.
     // Statement 5.
     if depth == 0 {
-        return handler.evaluate(pos);
+        return handler.evaluate(pos, depth, max_depth);
     }
 
     // Statement 4.
@@ -244,7 +244,7 @@ where
         m
     } else {
         // Statement 5.
-        handler.evaluate(pos)
+        handler.evaluate(pos, depth, max_depth)
     }
 }
 
@@ -264,7 +264,7 @@ where
     // A node `max_depth` plies ahead of the root is considered a leaf.
     // Statement 5.
     if depth == 0 {
-        return handler.evaluate(pos);
+        return handler.evaluate(pos, depth, max_depth);
     }
 
     // Statement 4.
@@ -324,7 +324,7 @@ where
         m
     } else {
         // Statement 5.
-        handler.evaluate(pos)
+        handler.evaluate(pos, depth, max_depth)
     }
 }
 
@@ -342,7 +342,7 @@ where
     // A node `max_depth` plies ahead of the root is considered a leaf.
     // Statement 5.
     if depth == 0 {
-        return handler.evaluate(pos);
+        return handler.evaluate(pos, depth, max_depth);
     }
 
     // Statement 4.
@@ -380,7 +380,7 @@ where
         m
     } else {
         // Statement 5.
-        handler.evaluate(pos)
+        handler.evaluate(pos, depth, max_depth)
     }
 }
 
@@ -400,7 +400,7 @@ where
     // Statement 5.
     if depth == 0 {
         // Statements 6-9.
-        return if op { handler.evaluate(pos) >= v } else { handler.evaluate(pos) > v };
+        return if op { handler.evaluate(pos, depth, max_depth) >= v } else { handler.evaluate(pos, depth, max_depth) > v };
     }
 
     // Statement 4.
@@ -425,7 +425,7 @@ where
         false
     } else {
         // Statements 6-9.
-        if op { handler.evaluate(pos) >= v } else { handler.evaluate(pos) > v }
+        if op { handler.evaluate(pos, depth, max_depth) >= v } else { handler.evaluate(pos, depth, max_depth) > v }
     }
 }
 
@@ -595,7 +595,7 @@ where
                             node: n,
                             status: Status::Solved,
                             node_type: nt,
-                            merit: std::cmp::min(h, handler.evaluate(n)),
+                            merit: std::cmp::min(h, handler.evaluate(n, depth, max_depth)),
                             depth: d,
                         }
                     );
@@ -644,7 +644,7 @@ where
                             node: n,
                             status: Status::Solved,
                             node_type: nt,
-                            merit: std::cmp::min(h, handler.evaluate(n)),
+                            merit: std::cmp::min(h, handler.evaluate(n, depth, max_depth)),
                             depth: d,
                         }
                     );

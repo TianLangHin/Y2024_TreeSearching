@@ -23,5 +23,5 @@ where
     const EVAL_EPSILON: Self::Eval;
     fn new() -> Self;
     fn get_legal_moves(&self, pos: GP) -> impl Iterator<Item = <GP as GamePosition>::Move>;
-    fn evaluate(&self, pos: GP) -> Self::Eval;
+    fn evaluate(&self, pos: GP, depth: usize, max_depth: usize) -> Self::Eval;
 }

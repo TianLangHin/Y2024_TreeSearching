@@ -263,11 +263,11 @@ impl GameHandler<Ut3Board> for Ut3Handler {
         }
     }
 
-    fn evaluate(&self, board: Ut3Board) -> Self::Eval {
+    fn evaluate(&self, board: Ut3Board, depth: usize, max_depth: usize) -> Self::Eval {
         let Ut3Board { us, them, share } = board;
         let eval = self.large_table[((share >> 36) & Ut3Board::DBLCHUNK) as usize];
         if eval == Self::OUTCOME_WIN || eval == Self::OUTCOME_LOSS {
-            return eval;
+            return eval - (max_depth - depth) as i32;
         }
         let large = ((share >> 36) | (share >> 45)) & Ut3Board::CHUNK;
         if large == Ut3Board::CHUNK {
