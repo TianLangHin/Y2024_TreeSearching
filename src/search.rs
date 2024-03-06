@@ -154,7 +154,7 @@ where
         );
 
         // Statement 7.
-        while let Some(mv) = move_iter.next() {
+        for mv in move_iter {
 
             let next_pos = pos.play_move(mv);
 
@@ -285,7 +285,7 @@ where
         // Statement 7.
         if m < beta {
             // Statement 8.
-            while let Some(mv) = move_iter.next() {
+            for mv in move_iter {
 
                 // Statement 10.
                 let bound = std::cmp::max(m, alpha);
@@ -362,7 +362,7 @@ where
         let op = true;
 
         // Statement 8.
-        while let Some(mv) = move_iter.next() {
+        for mv in move_iter {
 
             let next_pos = pos.play_move(mv);
 
@@ -425,7 +425,7 @@ where
         false
     } else {
         // Statements 6-9.
-        return if op { handler.evaluate(pos) >= v } else { handler.evaluate(pos) > v };
+        if op { handler.evaluate(pos) >= v } else { handler.evaluate(pos) > v }
     }
 }
 
@@ -482,7 +482,7 @@ where
         TEval: Clone + Copy + std::fmt::Debug + PartialEq + Eq + PartialOrd + Ord
     {
         fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-            self.merit.partial_cmp(&other.merit)
+            Some(self.cmp(other))
         }
     }
 
@@ -560,8 +560,7 @@ where
                         if let Some(next_move) = handler
                             .get_legal_moves(parent)
                             .skip_while(|&mv| parent.play_move(mv) != n)
-                            .skip(1)
-                            .next()
+                            .nth(1)
                         {
                             // Case 2.
                             open.push(
@@ -625,7 +624,7 @@ where
                                     depth: d - 1,
                                 }
                             );
-                            while let Some(mv) = legal_moves.next() {
+                            for mv in legal_moves {
                                 open.push(
                                     State {
                                         node: n.play_move(mv),
