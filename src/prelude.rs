@@ -1,7 +1,7 @@
 pub trait GamePosition: Clone + Copy + std::fmt::Debug + PartialEq + Eq {
     type Move: Clone + Copy + std::fmt::Debug + PartialEq + Eq;
     fn startpos() -> Self;
-    fn play_move(&self, _mv: Self::Move) -> Self;
+    fn play_move(&self, mv: Self::Move) -> Self;
 }
 
 pub trait GameHandler<GP>
@@ -22,6 +22,6 @@ where
     const EVAL_MAXIMUM: Self::Eval;
     const EVAL_EPSILON: Self::Eval;
     fn new() -> Self;
-    fn get_legal_moves(&self, _pos: GP) -> impl Iterator<Item = <GP as GamePosition>::Move>;
-    fn evaluate(&self, _pos: GP) -> Self::Eval;
+    fn get_legal_moves(&self, pos: GP) -> impl Iterator<Item = <GP as GamePosition>::Move>;
+    fn evaluate(&self, pos: GP) -> Self::Eval;
 }
