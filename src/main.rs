@@ -1,10 +1,10 @@
-use crate::prelude::*;
 use crate::games::stockman::*;
 use crate::games::ut3::*;
+use crate::prelude::*;
 use crate::search::*;
 
-pub mod prelude;
 pub mod games;
+pub mod prelude;
 pub mod search;
 
 use std::time::Instant;
@@ -118,7 +118,6 @@ fn main() {
     println!("Ut3: {:?}", ut3_eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
-
     println!("alpha_beta");
     let s = Instant::now();
     let ut3_eval = alpha_beta::<Ut3Handler, Ut3Board>(
@@ -132,15 +131,10 @@ fn main() {
     println!("Ut3: {:?}", ut3_eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
-
     println!("p_alpha_beta");
     let s = Instant::now();
-    let ut3_eval = p_alpha_beta::<Ut3Handler, Ut3Board>(
-        &Ut3Handler::new(),
-        Ut3Board::startpos(),
-        4,
-        4,
-    );
+    let ut3_eval =
+        p_alpha_beta::<Ut3Handler, Ut3Board>(&Ut3Handler::new(), Ut3Board::startpos(), 4, 4);
     println!("Ut3: {:?}", ut3_eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
@@ -159,12 +153,7 @@ fn main() {
 
     println!("scout");
     let s = Instant::now();
-    let ut3_eval = scout::<Ut3Handler, Ut3Board>(
-        &Ut3Handler::new(),
-        Ut3Board::startpos(),
-        4,
-        4,
-    );
+    let ut3_eval = scout::<Ut3Handler, Ut3Board>(&Ut3Handler::new(), Ut3Board::startpos(), 4, 4);
     println!("Ut3: {:?}", ut3_eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
@@ -172,12 +161,7 @@ fn main() {
     // Maybe use BTreeMap.
     println!("state space search");
     let s = Instant::now();
-    let ut3_eval = sss::<Ut3Handler, Ut3Board>(
-        &Ut3Handler::new(),
-        Ut3Board::startpos(),
-        4,
-        4,
-    );
+    let ut3_eval = sss::<Ut3Handler, Ut3Board>(&Ut3Handler::new(), Ut3Board::startpos(), 4, 4);
     println!("Ut3: {:?}", ut3_eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 }

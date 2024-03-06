@@ -13,7 +13,7 @@ pub fn branch_and_bound<THandler, TPosition>(
 ) -> <THandler as GameHandler<TPosition>>::Eval
 where
     THandler: GameHandler<TPosition>,
-    TPosition: GamePosition
+    TPosition: GamePosition,
 {
     // A node `max_depth` plies ahead of the root is considered a leaf.
     // Statement 5.
@@ -25,19 +25,17 @@ where
     let mut move_iter = handler.get_legal_moves(pos);
 
     if let Some(mut mv) = move_iter.next() {
-
         // Statement 6.
         let mut m = <THandler as GameHandler<TPosition>>::EVAL_MINIMUM;
 
         loop {
-
             // Statement 9.
             let t = -branch_and_bound::<THandler, TPosition>(
                 handler,
                 pos.play_move(mv),
                 depth - 1,
                 max_depth,
-                -m
+                -m,
             );
             if t > m {
                 m = t;
@@ -73,7 +71,7 @@ pub fn alpha_beta<THandler, TPosition>(
 ) -> <THandler as GameHandler<TPosition>>::Eval
 where
     THandler: GameHandler<TPosition>,
-    TPosition: GamePosition
+    TPosition: GamePosition,
 {
     // A node `max_depth` plies ahead of the root is considered a leaf.
     // Statement 5.
@@ -85,12 +83,10 @@ where
     let mut move_iter = handler.get_legal_moves(pos);
 
     if let Some(mut mv) = move_iter.next() {
-
         // Statement 6.
         let mut m = alpha;
 
         loop {
-
             // Statement 9.
             let t = -alpha_beta::<THandler, TPosition>(
                 handler,
@@ -98,7 +94,7 @@ where
                 depth - 1,
                 max_depth,
                 -beta,
-                -m
+                -m,
             );
             if t > m {
                 m = t;
@@ -132,7 +128,7 @@ pub fn p_alpha_beta<THandler, TPosition>(
 ) -> <THandler as GameHandler<TPosition>>::Eval
 where
     THandler: GameHandler<TPosition>,
-    TPosition: GamePosition
+    TPosition: GamePosition,
 {
     // A node `max_depth` plies ahead of the root is considered a leaf.
     // Statement 5.
@@ -144,18 +140,12 @@ where
     let mut move_iter = handler.get_legal_moves(pos);
 
     if let Some(mv) = move_iter.next() {
-
         // Statement 6.
-        let mut m = -p_alpha_beta::<THandler, TPosition>(
-            handler,
-            pos.play_move(mv),
-            depth - 1,
-            max_depth
-        );
+        let mut m =
+            -p_alpha_beta::<THandler, TPosition>(handler, pos.play_move(mv), depth - 1, max_depth);
 
         // Statement 7.
         for mv in move_iter {
-
             let next_pos = pos.play_move(mv);
 
             // Statement 9.
@@ -165,7 +155,7 @@ where
                 depth - 1,
                 max_depth,
                 -m - <THandler as GameHandler<TPosition>>::EVAL_EPSILON,
-                -m
+                -m,
             );
 
             // Statement 10.
@@ -176,7 +166,7 @@ where
                     depth - 1,
                     max_depth,
                     <THandler as GameHandler<TPosition>>::EVAL_MINIMUM,
-                    -t
+                    -t,
                 );
             }
         }
@@ -198,7 +188,7 @@ pub fn f_alpha_beta<THandler, TPosition>(
 ) -> <THandler as GameHandler<TPosition>>::Eval
 where
     THandler: GameHandler<TPosition>,
-    TPosition: GamePosition
+    TPosition: GamePosition,
 {
     // A node `max_depth` plies ahead of the root is considered a leaf.
     // Statement 5.
@@ -210,12 +200,10 @@ where
     let mut move_iter = handler.get_legal_moves(pos);
 
     if let Some(mut mv) = move_iter.next() {
-
         // Statement 6.
         let mut m = <THandler as GameHandler<TPosition>>::EVAL_MINIMUM;
 
         loop {
-
             // Statement 9.
             let t = -f_alpha_beta::<THandler, TPosition>(
                 handler,
@@ -223,7 +211,7 @@ where
                 depth - 1,
                 max_depth,
                 -beta,
-                -std::cmp::max(m, alpha)
+                -std::cmp::max(m, alpha),
             );
             if t > m {
                 m = t;
@@ -259,7 +247,7 @@ pub fn pvs<THandler, TPosition>(
 ) -> <THandler as GameHandler<TPosition>>::Eval
 where
     THandler: GameHandler<TPosition>,
-    TPosition: GamePosition
+    TPosition: GamePosition,
 {
     // A node `max_depth` plies ahead of the root is considered a leaf.
     // Statement 5.
@@ -271,7 +259,6 @@ where
     let mut move_iter = handler.get_legal_moves(pos);
 
     if let Some(mv) = move_iter.next() {
-
         // Statement 6.
         let mut m = -pvs::<THandler, TPosition>(
             handler,
@@ -286,7 +273,6 @@ where
         if m < beta {
             // Statement 8.
             for mv in move_iter {
-
                 // Statement 10.
                 let bound = std::cmp::max(m, alpha);
 
@@ -337,7 +323,7 @@ pub fn scout<THandler, TPosition>(
 ) -> <THandler as GameHandler<TPosition>>::Eval
 where
     THandler: GameHandler<TPosition>,
-    TPosition: GamePosition
+    TPosition: GamePosition,
 {
     // A node `max_depth` plies ahead of the root is considered a leaf.
     // Statement 5.
@@ -349,31 +335,19 @@ where
     let mut move_iter = handler.get_legal_moves(pos);
 
     if let Some(mv) = move_iter.next() {
-
         // Statement 6.
-        let mut m = -scout::<THandler, TPosition>(
-            handler,
-            pos.play_move(mv),
-            depth - 1,
-            max_depth
-        );
+        let mut m = -scout::<THandler, TPosition>(handler, pos.play_move(mv), depth - 1, max_depth);
 
         // Statement 7.
         let op = true;
 
         // Statement 8.
         for mv in move_iter {
-
             let next_pos = pos.play_move(mv);
 
             // Statement 9.
             if !test::<THandler, TPosition>(handler, next_pos, depth - 1, max_depth, -m, !op) {
-                m = -scout::<THandler, TPosition>(
-                    handler,
-                    next_pos,
-                    depth - 1,
-                    max_depth,
-                );
+                m = -scout::<THandler, TPosition>(handler, next_pos, depth - 1, max_depth);
             }
         }
 
@@ -390,28 +364,37 @@ pub fn test<THandler, TPosition>(
     depth: usize,
     max_depth: usize,
     v: <THandler as GameHandler<TPosition>>::Eval,
-    op: bool
+    op: bool,
 ) -> bool
 where
     THandler: GameHandler<TPosition>,
-    TPosition: GamePosition
+    TPosition: GamePosition,
 {
     // A node `max_depth` plies ahead of the root is considered a leaf.
     // Statement 5.
     if depth == 0 {
         // Statements 6-9.
-        return if op { handler.evaluate(pos, depth, max_depth) >= v } else { handler.evaluate(pos, depth, max_depth) > v };
+        return if op {
+            handler.evaluate(pos, depth, max_depth) >= v
+        } else {
+            handler.evaluate(pos, depth, max_depth) > v
+        };
     }
 
     // Statement 4.
     let mut move_iter = handler.get_legal_moves(pos);
 
     if let Some(mut mv) = move_iter.next() {
-
         loop {
-
             // Statement 11.
-            if !test::<THandler, TPosition>(handler, pos.play_move(mv), depth - 1, max_depth, -v, !op) {
+            if !test::<THandler, TPosition>(
+                handler,
+                pos.play_move(mv),
+                depth - 1,
+                max_depth,
+                -v,
+                !op,
+            ) {
                 return true;
             }
 
@@ -425,7 +408,11 @@ where
         false
     } else {
         // Statements 6-9.
-        if op { handler.evaluate(pos, depth, max_depth) >= v } else { handler.evaluate(pos, depth, max_depth) > v }
+        if op {
+            handler.evaluate(pos, depth, max_depth) >= v
+        } else {
+            handler.evaluate(pos, depth, max_depth) > v
+        }
     }
 }
 
@@ -460,14 +447,13 @@ pub fn sss<H, P>(
 ) -> <H as GameHandler<P>>::Eval
 where
     H: GameHandler<P>,
-    P: GamePosition
+    P: GamePosition,
 {
-
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     struct State<TPos, TEval>
     where
         TPos: Clone + Copy + std::fmt::Debug + PartialEq + Eq,
-        TEval: Clone + Copy + std::fmt::Debug + PartialEq + Eq + PartialOrd + Ord
+        TEval: Clone + Copy + std::fmt::Debug + PartialEq + Eq + PartialOrd + Ord,
     {
         pub node: TPos,
         pub status: Status,
@@ -479,7 +465,7 @@ where
     impl<TPos, TEval> PartialOrd for State<TPos, TEval>
     where
         TPos: Clone + Copy + std::fmt::Debug + PartialEq + Eq,
-        TEval: Clone + Copy + std::fmt::Debug + PartialEq + Eq + PartialOrd + Ord
+        TEval: Clone + Copy + std::fmt::Debug + PartialEq + Eq + PartialOrd + Ord,
     {
         fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
             Some(self.cmp(other))
@@ -489,7 +475,7 @@ where
     impl<TPos, TEval> Ord for State<TPos, TEval>
     where
         TPos: Clone + Copy + std::fmt::Debug + PartialEq + Eq,
-        TEval: Clone + Copy + std::fmt::Debug + PartialEq + Eq + PartialOrd + Ord
+        TEval: Clone + Copy + std::fmt::Debug + PartialEq + Eq + PartialOrd + Ord,
     {
         fn cmp(&self, other: &Self) -> std::cmp::Ordering {
             self.merit.cmp(&other.merit)
@@ -499,19 +485,24 @@ where
     let mut parent_map: Vec<(P, P)> = Vec::new();
 
     let mut open: BinaryHeap<State<P, <H as GameHandler<P>>::Eval>> = BinaryHeap::new();
-    open.push(
-        State {
-            node: root,
-            status: Status::Live,
-            node_type: NodeType::Max,
-            merit: <H as GameHandler<P>>::EVAL_MAXIMUM,
-            depth,
-        }
-    );
+    open.push(State {
+        node: root,
+        status: Status::Live,
+        node_type: NodeType::Max,
+        merit: <H as GameHandler<P>>::EVAL_MAXIMUM,
+        depth,
+    });
 
     let mut i: usize = 1;
 
-    while let Some(State { node: n, status: s, node_type: nt, merit: h, depth: d }) = open.pop() {
+    while let Some(State {
+        node: n,
+        status: s,
+        node_type: nt,
+        merit: h,
+        depth: d,
+    }) = open.pop()
+    {
         if d == max_depth && s == Status::Solved {
             println!("Iterations: {i}");
             return h;
@@ -542,9 +533,8 @@ where
                         open.retain(|&state| {
                             let mut descendant = false;
                             let mut querying_node = state.node;
-                            while let Some((_, p)) = parent_map
-                                .iter()
-                                .find(|&&(c, _)| c == querying_node)
+                            while let Some((_, p)) =
+                                parent_map.iter().find(|&&(c, _)| c == querying_node)
                             {
                                 if querying_node == new_state.node {
                                     descendant = true;
@@ -563,26 +553,22 @@ where
                             .nth(1)
                         {
                             // Case 2.
-                            open.push(
-                                State {
-                                    node: parent.play_move(next_move),
-                                    status: Status::Live,
-                                    node_type: nt,
-                                    merit: h,
-                                    depth: d,
-                                }
-                            );
+                            open.push(State {
+                                node: parent.play_move(next_move),
+                                status: Status::Live,
+                                node_type: nt,
+                                merit: h,
+                                depth: d,
+                            });
                         } else {
                             // Case 3.
-                            open.push(
-                                State {
-                                    node: parent,
-                                    status: Status::Solved,
-                                    node_type: nt.invert(),
-                                    merit: h,
-                                    depth: d + 1,
-                                }
-                            );
+                            open.push(State {
+                                node: parent,
+                                status: Status::Solved,
+                                node_type: nt.invert(),
+                                merit: h,
+                                depth: d + 1,
+                            });
                         }
                     }
                 }
@@ -590,64 +576,54 @@ where
             Status::Live => {
                 if d == 0 {
                     // Extension of Case 4. `max_depth` plies from root is considered leaf.
-                    open.push(
-                        State {
-                            node: n,
-                            status: Status::Solved,
-                            node_type: nt,
-                            merit: std::cmp::min(h, handler.evaluate(n, depth, max_depth)),
-                            depth: d,
-                        }
-                    );
+                    open.push(State {
+                        node: n,
+                        status: Status::Solved,
+                        node_type: nt,
+                        merit: std::cmp::min(h, handler.evaluate(n, depth, max_depth)),
+                        depth: d,
+                    });
                 } else if let Some(first_move) = legal_moves.next() {
                     match nt {
                         NodeType::Min => {
                             // Case 5.
-                            open.push(
-                                State {
-                                    node: n.play_move(first_move),
-                                    status: Status::Live,
-                                    node_type: nt.invert(),
-                                    merit: h,
-                                    depth: d - 1,
-                                }
-                            );
+                            open.push(State {
+                                node: n.play_move(first_move),
+                                status: Status::Live,
+                                node_type: nt.invert(),
+                                merit: h,
+                                depth: d - 1,
+                            });
                         }
                         NodeType::Max => {
                             // Case 6.
-                            open.push(
-                                State {
-                                    node: n.play_move(first_move),
+                            open.push(State {
+                                node: n.play_move(first_move),
+                                status: Status::Live,
+                                node_type: nt.invert(),
+                                merit: h,
+                                depth: d - 1,
+                            });
+                            for mv in legal_moves {
+                                open.push(State {
+                                    node: n.play_move(mv),
                                     status: Status::Live,
                                     node_type: nt.invert(),
                                     merit: h,
                                     depth: d - 1,
-                                }
-                            );
-                            for mv in legal_moves {
-                                open.push(
-                                    State {
-                                        node: n.play_move(mv),
-                                        status: Status::Live,
-                                        node_type: nt.invert(),
-                                        merit: h,
-                                        depth: d - 1,
-                                    }
-                                );
+                                });
                             }
                         }
                     }
                 } else {
                     // Next legal move is `None` on first attempt: leaf node. Thus, Case 4.
-                    open.push(
-                        State {
-                            node: n,
-                            status: Status::Solved,
-                            node_type: nt,
-                            merit: std::cmp::min(h, handler.evaluate(n, depth, max_depth)),
-                            depth: d,
-                        }
-                    );
+                    open.push(State {
+                        node: n,
+                        status: Status::Solved,
+                        node_type: nt,
+                        merit: std::cmp::min(h, handler.evaluate(n, depth, max_depth)),
+                        depth: d,
+                    });
                 }
             }
         }

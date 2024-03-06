@@ -41,11 +41,19 @@ impl GamePosition for Ut3Board {
     type Move = u64;
 
     fn startpos() -> Self {
-        Self { us: 0u64, them: 0u64, share: Self::ZONE_ANY << 54 }
+        Self {
+            us: 0u64,
+            them: 0u64,
+            share: Self::ZONE_ANY << 54,
+        }
     }
 
     fn play_move(&self, mv: Self::Move) -> Self {
-        let Self { mut us, them, mut share } = *self;
+        let Self {
+            mut us,
+            them,
+            mut share,
+        } = *self;
         let line_occupancy = if mv > 62 {
             share |= 1 << (mv - 63);
             Self::line_presence(share >> (9 * (mv / 9) - 63))
@@ -61,18 +69,23 @@ impl GamePosition for Ut3Board {
         } else {
             ((us | them) >> (9 * (mv % 9))) & Self::CHUNK
         };
-        let zone = if next_chunk == Self::CHUNK ||(((share | (share >> 9)) >> (36 + mv % 9)) & 1) == 1 {
-            Self::ZONE_ANY
-        } else {
-            mv % 9
-        };
+        let zone =
+            if next_chunk == Self::CHUNK || (((share | (share >> 9)) >> (36 + mv % 9)) & 1) == 1 {
+                Self::ZONE_ANY
+            } else {
+                mv % 9
+            };
         // Now we flip the board.
         share = ((share & Self::DBLCHUNK) << 18)
             | ((share >> 18) & Self::DBLCHUNK)
             | ((share & (Self::CHUNK << 45)) >> 9)
             | ((share & (Self::CHUNK << 36)) << 9)
             | (zone << 54);
-        Self { us: them, them: us, share }
+        Self {
+            us: them,
+            them: us,
+            share,
+        }
     }
 }
 
@@ -104,7 +117,6 @@ impl Ut3Handler {
 }
 
 impl GameHandler<Ut3Board> for Ut3Handler {
-
     type Eval = i32;
 
     const EVAL_MINIMUM: i32 = Self::OUTCOME_LOSS;
@@ -186,7 +198,10 @@ impl GameHandler<Ut3Board> for Ut3Handler {
                 }
             }
         }
-        Self { large_table, small_table }
+        Self {
+            large_table,
+            small_table,
+        }
     }
 
     fn get_legal_moves(&self, board: Ut3Board) -> impl Iterator<Item = u64> {
@@ -242,7 +257,9 @@ impl GameHandler<Ut3Board> for Ut3Handler {
 
                 LegalMoves::AllZones(
                     (0..63)
-                        .filter(move |i| ((nw_to_sw >> i) & 1) == 0 && ((large >> (i / 9)) & 1) == 0)
+                        .filter(move |i| {
+                            ((nw_to_sw >> i) & 1) == 0 && ((large >> (i / 9)) & 1) == 0
+                        })
                         .chain((63..81).filter(move |i| {
                             ((s_to_se >> (i - 63)) & 1) == 0 && ((large >> (i / 9)) & 1) == 0
                         })),
