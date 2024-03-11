@@ -24,3 +24,4 @@ Currently, the following game trees are implemented in `src/games`.
 
 * A representation of the sample game tree in Stockman's (1979) original proposal of SSS*, defined in `stockman.rs`.
 * A representation of Ultimate Tic-Tac-Toe using bitboards, defined in `ut3.rs`.
+* A representation of Chess using bitboards (particularly magic lookups), defined in `chess.rs`.
