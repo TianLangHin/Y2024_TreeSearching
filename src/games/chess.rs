@@ -437,6 +437,258 @@ impl ChessPos {
             full_move: self.full_move,
         }
     }
+
+    pub fn square_to_string(sq: u64) -> String {
+        let f = ["a", "b", "c", "d", "e", "f", "g", "h"];
+        let r = ["1", "2", "3", "4", "5", "6", "7", "8"];
+        format!("{}{}", f[(sq & 7) as usize], r[((sq >> 3) & 7) as usize])
+    }
+
+    pub fn string_to_square(s: &str) -> Option<u64> {
+        let mut chars = s.chars();
+        let f = chars.next().unwrap();
+        let r = chars.next().unwrap();
+        let file = match f {
+            'a' => 0,
+            'b' => 1,
+            'c' => 2,
+            'd' => 3,
+            'e' => 4,
+            'f' => 5,
+            'g' => 6,
+            'h' => 7,
+            _ => return None,
+        };
+        let rank = match r {
+            '1' => 0,
+            '2' => 1,
+            '3' => 2,
+            '4' => 3,
+            '5' => 4,
+            '6' => 5,
+            '7' => 6,
+            '8' => 7,
+            _ => return None,
+        } << 3;
+        Some(file + rank)
+    }
+
+    pub fn to_fen(&self) -> String {
+        let pos = if ((self.squares >> 19) & 1) == 1 { self.flip_position() } else { *self };
+        let mut board: [char; 64] = ['.'; 64];
+        for sq in 0..64 {
+            if ((pos.own >> sq) & 1) == 1 {
+                if (pos.squares & 0x3f) == sq {
+                    board[sq as usize] = 'K';
+                } else if ((pos.pawn >> sq) & 1) == 1 {
+                    board[sq as usize] = 'P';
+                } else if (((pos.ortho & pos.diag) >> sq) & 1) == 1 {
+                    board[sq as usize] = 'Q';
+                } else if ((pos.ortho >> sq) & 1) == 1 {
+                    board[sq as usize] = 'R';
+                } else if ((pos.diag >> sq) & 1) == 1 {
+                    board[sq as usize] = 'B';
+                } else {
+                    board[sq as usize] = 'N';
+                }
+            } else if ((pos.other >> sq) & 1) == 1 {
+                if ((pos.squares >> 6) & 0x3f) == sq {
+                    board[sq as usize] = 'k';
+                } else if ((pos.pawn >> sq) & 1) == 1 {
+                    board[sq as usize] = 'p';
+                } else if (((pos.ortho & pos.diag) >> sq) & 1) == 1 {
+                    board[sq as usize] = 'q';
+                } else if ((pos.ortho >> sq) & 1) == 1 {
+                    board[sq as usize] = 'r';
+                } else if ((pos.diag >> sq) & 1) == 1 {
+                    board[sq as usize] = 'b';
+                } else {
+                    board[sq as usize] = 'n';
+                }
+            }
+        }
+        let flags = pos.squares;
+        let en_passant = (flags >> 12) & 0x7f;
+        let side = (flags >> 19) & 1;
+        let w_oo = (flags >> 20) & 1;
+        let b_oo = (flags >> 21) & 1;
+        let w_ooo = (flags >> 22) & 1;
+        let b_ooo = (flags >> 23) & 1;
+
+        let castling_string = if (w_oo | b_oo | w_ooo | b_ooo) == 0 {
+            "-".to_string()
+        } else {
+            format!(
+                "{}{}{}{}",
+                if w_oo == 1 { "K" } else { "" },
+                if w_ooo == 1 { "Q" } else { "" },
+                if b_oo == 1 { "k" } else { "" },
+                if b_ooo == 1 { "q" } else { "" },
+            )
+        };
+
+        format!(
+            "{} {} {} {} {} {}",
+            (0..64)
+                .step_by(8)
+                .rev()
+                .map(|rank| {
+                    (rank..rank + 8)
+                        .map(|file| board[file as usize].to_string())
+                        .collect::<String>()
+                })
+                .collect::<Vec<_>>()
+                .join("/"),
+            if side == 1 { "b" } else { "w" },
+            castling_string,
+            if en_passant == NO_EN_PASSANT {
+                "-".to_string()
+            } else {
+                Self::square_to_string(en_passant)
+            },
+            pos.half_move,
+            pos.full_move
+        )
+        .replace("........", "8")
+        .replace(".......", "7")
+        .replace("......", "6")
+        .replace(".....", "5")
+        .replace("....", "4")
+        .replace("...", "3")
+        .replace("..", "2")
+        .replace('.', "1")
+    }
+
+    pub fn from_fen(pos_string: &str) -> Option<Self> {
+        let items = pos_string.split_whitespace().collect::<Vec<_>>();
+
+        if items.len() < 4 || items.len() > 6 {
+            return None;
+        }
+
+        let mut pos = Self {
+            pawn: 0,
+            ortho: 0,
+            diag: 0,
+            own: 0,
+            other: 0,
+            squares: 0,
+            half_move: 0,
+            full_move: 0,
+        };
+
+        let (rows, side, castle, ep) = (items[0], items[1], items[2], items[3]);
+        let half = if items.len() > 4 { items[4] } else { "0" };
+        let full = if items.len() > 5 { items[5] } else { "1" };
+
+        if side != "w" && side != "b" {
+            return None;
+        }
+
+        for c in castle.chars() {
+            match c {
+                'K' => pos.squares |= 1 << 20,
+                'Q' => pos.squares |= 1 << 22,
+                'k' => pos.squares |= 1 << 21,
+                'q' => pos.squares |= 1 << 23,
+                '-' => {}
+                _ => return None,
+            }
+        }
+
+        if ep == "-" {
+            pos.squares |= NO_EN_PASSANT << 12;
+        } else if let Some(s) = Self::string_to_square(ep) {
+            pos.squares |= s << 12;
+        } else {
+            return None;
+        }
+
+        if let (Ok(h), Ok(f)) = (half.parse::<u64>(), full.parse::<u64>()) {
+            pos.half_move = h;
+            pos.full_move = f;
+        } else {
+            return None;
+        }
+
+        let cells = rows
+            .replace('1', ".")
+            .replace('2', "..")
+            .replace('3', "...")
+            .replace('4', "....")
+            .replace('5', ".....")
+            .replace('6', "......")
+            .replace('7', ".......")
+            .replace('8', "........")
+            .replace('/', "");
+
+        for (sq, ch) in (0..64)
+            .step_by(8)
+            .rev()
+            .flat_map(|i| i..i + 8)
+            .zip(cells.chars())
+        {
+            let bb = 1 << (sq as u64);
+            match ch {
+                'P' => {
+                    pos.own |= bb;
+                    pos.pawn |= bb;
+                }
+                'N' => {
+                    pos.own |= bb;
+                }
+                'B' => {
+                    pos.own |= bb;
+                    pos.diag |= bb;
+                }
+                'R' => {
+                    pos.own |= bb;
+                    pos.ortho |= bb;
+                }
+                'Q' => {
+                    pos.own |= bb;
+                    pos.diag |= bb;
+                    pos.ortho |= bb;
+                }
+                'K' => {
+                    pos.own |= bb;
+                    pos.squares |= sq as u64;
+                }
+                'p' => {
+                    pos.other |= bb;
+                    pos.pawn |= bb;
+                }
+                'n' => {
+                    pos.other |= bb;
+                }
+                'b' => {
+                    pos.other |= bb;
+                    pos.diag |= bb;
+                }
+                'r' => {
+                    pos.other |= bb;
+                    pos.ortho |= bb;
+                }
+                'q' => {
+                    pos.other |= bb;
+                    pos.diag |= bb;
+                    pos.ortho |= bb;
+                }
+                'k' => {
+                    pos.other |= bb;
+                    pos.squares |= (sq as u64) << 6;
+                }
+                _ => {}
+            }
+        }
+
+        if side == "b" {
+            pos.squares |= 1 << 19;
+            Some(pos.flip_position())
+        } else {
+            Some(pos)
+        }
+    }
 }
 
 impl GamePosition for ChessPos {
