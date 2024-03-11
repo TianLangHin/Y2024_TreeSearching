@@ -38,8 +38,16 @@ fn square_to_string(sq: u64) -> String {
 }
 
 fn move_string(mv: u64, side: u64) -> String {
-    let o = if side == 1 { flip_square(mv & 0x3f) } else { mv & 0x3f };
-    let d = if side == 1 { flip_square((mv >> 6) & 0x3f) } else { (mv >> 6) & 0x3f };
+    let o = if side == 1 {
+        flip_square(mv & 0x3f)
+    } else {
+        mv & 0x3f
+    };
+    let d = if side == 1 {
+        flip_square((mv >> 6) & 0x3f)
+    } else {
+        (mv >> 6) & 0x3f
+    };
     let f = (mv >> 12) & 0x3;
     let p = (mv >> 14) & 0x3;
 
@@ -73,7 +81,8 @@ fn perft(depth: usize, pos: ChessPos, handler: &ChessHandler) -> u64 {
     if depth == 1 {
         return handler.get_legal_moves(pos).count() as u64;
     }
-    handler.get_legal_moves(pos)
+    handler
+        .get_legal_moves(pos)
         .map(|mv| perft(depth - 1, pos.play_move(mv), handler))
         .sum()
 }
@@ -87,7 +96,8 @@ fn perft_div_main(depth: usize, pos: ChessPos, handler: &ChessHandler) {
         return;
     }
     let s = Instant::now();
-    let sum: u64 = handler.get_legal_moves(pos)
+    let sum: u64 = handler
+        .get_legal_moves(pos)
         .map(|mv| {
             let num = perft(depth - 1, pos.play_move(mv), handler);
             println!("{}: {num}", move_string(mv, (pos.squares >> 19) & 1));
@@ -107,7 +117,8 @@ fn perft_div_main_par(depth: usize, pos: ChessPos, handler: &ChessHandler) {
         return;
     }
     let s = Instant::now();
-    let sum: u64 = handler.get_legal_moves(pos)
+    let sum: u64 = handler
+        .get_legal_moves(pos)
         .collect::<Vec<_>>()
         .par_iter()
         .map(|&mv| {

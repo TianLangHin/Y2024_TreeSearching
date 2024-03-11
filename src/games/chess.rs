@@ -2,6 +2,31 @@
 
 use crate::prelude::*;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ChessPos {
+    pub pawn: u64,
+    pub ortho: u64,
+    pub diag: u64,
+    pub own: u64,
+    pub other: u64,
+    pub squares: u64,
+    pub half_move: u64,
+    pub full_move: u64,
+}
+
+#[derive(Clone, Debug)]
+struct SMagic {
+    pub attack_table: Vec<u64>,
+    pub mask: u64,
+    pub magic: u64,
+    pub shift: u64,
+}
+
+pub struct ChessHandler {
+    bishop_magics: [SMagic; 64],
+    rook_magics: [SMagic; 64],
+}
+
 const KINGSIDE_CASTLE_CLEARANCE_MASK: u64 = 0x60;
 const KINGSIDE_CASTLE_CHECK_MASK: u64 = 0x70;
 const QUEENSIDE_CASTLE_CLEARANCE_MASK: u64 = 0x0e;
@@ -389,18 +414,6 @@ const fn log2(x: u64) -> u64 {
     LOG_2_TABLE[((x * LOG_2_DE_BRUIJN) >> 58) as usize]
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct ChessPos {
-    pub pawn: u64,
-    pub ortho: u64,
-    pub diag: u64,
-    pub own: u64,
-    pub other: u64,
-    pub squares: u64,
-    pub half_move: u64,
-    pub full_move: u64,
-}
-
 impl ChessPos {
     #[inline]
     const fn flip_position(&self) -> Self {
@@ -549,25 +562,23 @@ impl GamePosition for ChessPos {
                     _ => {}
                 }
             }
-            FLAG_CASTLE => {
-                match destination {
-                    2 => {
-                        pos.squares &= !0x3f;
-                        pos.squares |= 2;
-                        pos.squares &= !((1 << 22) | (1 << 20));
-                        pos.ortho ^= 0x09;
-                        pos.own ^= 0x1d;
-                    }
-                    6 => {
-                        pos.squares &= !0x3f;
-                        pos.squares |= 6;
-                        pos.squares &= !((1 << 22) | (1 << 20));
-                        pos.ortho ^= 0xa0;
-                        pos.own ^= 0xf0;
-                    }
-                    _ => {}
+            FLAG_CASTLE => match destination {
+                2 => {
+                    pos.squares &= !0x3f;
+                    pos.squares |= 2;
+                    pos.squares &= !((1 << 22) | (1 << 20));
+                    pos.ortho ^= 0x09;
+                    pos.own ^= 0x1d;
                 }
-            }
+                6 => {
+                    pos.squares &= !0x3f;
+                    pos.squares |= 6;
+                    pos.squares &= !((1 << 22) | (1 << 20));
+                    pos.ortho ^= 0xa0;
+                    pos.own ^= 0xf0;
+                }
+                _ => {}
+            },
             FLAG_ENPASSANT => {
                 pos.half_move = 0;
                 pos.pawn ^= destination_bb | origin_bb | (destination_bb >> 8);
@@ -584,14 +595,6 @@ impl GamePosition for ChessPos {
     }
 }
 
-#[derive(Clone, Debug)]
-struct SMagic {
-    pub attack_table: Vec<u64>,
-    pub mask: u64,
-    pub magic: u64,
-    pub shift: u64,
-}
-
 impl SMagic {
     fn empty() -> Self {
         Self {
@@ -601,11 +604,6 @@ impl SMagic {
             shift: 0,
         }
     }
-}
-
-pub struct ChessHandler {
-    bishop_magics: [SMagic; 64],
-    rook_magics: [SMagic; 64],
 }
 
 impl ChessHandler {
@@ -801,7 +799,8 @@ impl ChessHandler {
         for blocker_pattern in Self::bit_permutations(mask) {
             let index = (blocker_pattern * magic) >> shift;
             if vision_table[index as usize] == 0 {
-                vision_table[index as usize] = Self::bishop_blocked_attack_rays(square, blocker_pattern);
+                vision_table[index as usize] =
+                    Self::bishop_blocked_attack_rays(square, blocker_pattern);
             } else {
                 return None;
             }
@@ -816,7 +815,8 @@ impl ChessHandler {
         for blocker_pattern in Self::bit_permutations(mask) {
             let index = (blocker_pattern * magic) >> shift;
             if vision_table[index as usize] == 0 {
-                vision_table[index as usize] = Self::rook_blocked_attack_rays(square, blocker_pattern);
+                vision_table[index as usize] =
+                    Self::rook_blocked_attack_rays(square, blocker_pattern);
             } else {
                 return None;
             }
@@ -913,7 +913,10 @@ impl GameHandler<ChessPos> for ChessHandler {
                 );
             }
         }
-        Self { bishop_magics: bishop_table, rook_magics: rook_table }
+        Self {
+            bishop_magics: bishop_table,
+            rook_magics: rook_table,
+        }
     }
 
     fn get_legal_moves(&self, pos: ChessPos) -> impl Iterator<Item = u64> {
@@ -972,14 +975,16 @@ impl GameHandler<ChessPos> for ChessHandler {
                         let mut dest: u64;
                         while bb != 0 {
                             dest = log2(bb & (!bb + 1));
-                            moves
-                                .extend((0..4).map(|prmt| make_move(square, dest, FLAG_PROMOTE, prmt)));
+                            moves.extend(
+                                (0..4).map(|prmt| make_move(square, dest, FLAG_PROMOTE, prmt)),
+                            );
                             bb &= bb - 1;
                         }
 
                         if ((blockers >> (square + 8)) & 1) == 0 {
                             moves.extend(
-                                (0..4).map(|prmt| make_move(square, square + 8, FLAG_PROMOTE, prmt)),
+                                (0..4)
+                                    .map(|prmt| make_move(square, square + 8, FLAG_PROMOTE, prmt)),
                             );
                         }
                     }
@@ -1015,8 +1020,8 @@ impl GameHandler<ChessPos> for ChessHandler {
             } else if ((bishop >> square) & 1) == 1 {
                 let m_bishop = &self.bishop_magics[square as usize];
                 bb = !pos.own
-                    & m_bishop.attack_table
-                        [(((blockers & m_bishop.mask) * m_bishop.magic) >> m_bishop.shift) as usize];
+                    & m_bishop.attack_table[(((blockers & m_bishop.mask) * m_bishop.magic)
+                        >> m_bishop.shift) as usize];
 
                 while bb != 0 {
                     moves.push(make_move(square, log2(bb & (!bb + 1)), FLAG_NONE, 0));
@@ -1036,8 +1041,8 @@ impl GameHandler<ChessPos> for ChessHandler {
                 let m_bishop = &self.bishop_magics[square as usize];
                 let m_rook = &self.rook_magics[square as usize];
                 bb = !pos.own
-                    & (m_bishop.attack_table
-                        [(((blockers & m_bishop.mask) * m_bishop.magic) >> m_bishop.shift) as usize]
+                    & (m_bishop.attack_table[(((blockers & m_bishop.mask) * m_bishop.magic)
+                        >> m_bishop.shift) as usize]
                         | m_rook.attack_table
                             [(((blockers & m_rook.mask) * m_rook.magic) >> m_rook.shift) as usize]);
 

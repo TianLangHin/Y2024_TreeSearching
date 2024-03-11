@@ -7,6 +7,11 @@ pub struct Ut3Board {
     pub share: u64,
 }
 
+pub struct Ut3Handler {
+    large_table: Vec<i32>,
+    small_table: Vec<i32>,
+}
+
 impl Ut3Board {
     const CHUNK: u64 = 0b111111111;
     const DBLCHUNK: u64 = (Self::CHUNK << 9) | Self::CHUNK;
@@ -87,11 +92,6 @@ impl GamePosition for Ut3Board {
             share,
         }
     }
-}
-
-pub struct Ut3Handler {
-    large_table: Vec<i32>,
-    small_table: Vec<i32>,
 }
 
 impl Ut3Handler {
