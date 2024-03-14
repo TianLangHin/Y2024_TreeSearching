@@ -138,7 +138,7 @@ fn main() {
 
     println!("branch_and_bound");
     let s = Instant::now();
-    let stockman_eval = branch_and_bound::<StockmanHandler, StockmanPos>(
+    let stockman_eval = branch_and_bound::<StockmanHandler, StockmanPos, 4>(
         &StockmanHandler::new(),
         StockmanPos::startpos(),
         4,
@@ -211,7 +211,7 @@ fn main() {
 
     println!("branch_and_bound");
     let s = Instant::now();
-    let ut3_eval = branch_and_bound::<Ut3Handler, Ut3Board>(
+    let ut3_eval = branch_and_bound::<Ut3Handler, Ut3Board, 4>(
         &Ut3Handler::new(),
         Ut3Board::startpos(),
         4,

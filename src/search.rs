@@ -4,13 +4,16 @@ use std::collections::BinaryHeap;
 // Replication of algorithms described in Muszycka & Shinghal (1985).
 
 // Algorithm A.
-pub fn branch_and_bound<THandler, TPosition>(
+pub fn branch_and_bound<THandler, TPosition, const SIZE: usize>(
     handler: &THandler,
     pos: TPosition,
     depth: usize,
     max_depth: usize,
     bound: <THandler as GameHandler<TPosition>>::Eval,
-) -> <THandler as GameHandler<TPosition>>::Eval
+) -> (
+    <THandler as GameHandler<TPosition>>::Eval,
+    [Option<<TPosition as GamePosition>::Move>; SIZE]
+)
 where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
@@ -18,7 +21,7 @@ where
     // A node `max_depth` plies ahead of the root is considered a leaf.
     // Statement 5.
     if depth == 0 {
-        return handler.evaluate(pos, depth, max_depth);
+        return (handler.evaluate(pos, depth, max_depth), [None; SIZE]);
     }
 
     // Statement 4.
@@ -27,23 +30,28 @@ where
     if let Some(mut mv) = move_iter.next() {
         // Statement 6.
         let mut m = <THandler as GameHandler<TPosition>>::EVAL_MINIMUM;
+        let mut pv = [None; SIZE];
 
         loop {
             // Statement 9.
-            let t = -branch_and_bound::<THandler, TPosition>(
+            let (t, mut line) = branch_and_bound::<THandler, TPosition, SIZE>(
                 handler,
                 pos.play_move(mv),
                 depth - 1,
                 max_depth,
                 -m,
             );
+            let t = -t;
+            line[max_depth - depth] = Some(mv);
+
             if t > m {
                 m = t;
+                pv = line;
             }
 
             // Statement 10.
             if m >= bound {
-                return m;
+                return (m, line);
             }
 
             if let Some(new_mv) = move_iter.next() {
@@ -53,10 +61,10 @@ where
             }
         }
 
-        m
+        (m, pv)
     } else {
         // Statement 5.
-        handler.evaluate(pos, depth, max_depth)
+        (handler.evaluate(pos, depth, max_depth), [None; SIZE])
     }
 }
 
