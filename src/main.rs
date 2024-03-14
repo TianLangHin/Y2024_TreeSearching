@@ -163,7 +163,7 @@ fn main() {
 
     println!("p_alpha_beta");
     let s = Instant::now();
-    let stockman_eval = p_alpha_beta::<StockmanHandler, StockmanPos>(
+    let stockman_eval = p_alpha_beta::<StockmanHandler, StockmanPos, 4>(
         &StockmanHandler::new(),
         StockmanPos::startpos(),
         4,
@@ -211,11 +211,11 @@ fn main() {
 
     println!("branch_and_bound");
     let s = Instant::now();
-    let ut3_eval = branch_and_bound::<Ut3Handler, Ut3Board, 4>(
+    let ut3_eval = branch_and_bound::<Ut3Handler, Ut3Board, 6>(
         &Ut3Handler::new(),
         Ut3Board::startpos(),
-        4,
-        4,
+        6,
+        6,
         Ut3Handler::EVAL_MAXIMUM,
     );
     println!("Ut3: {:?}", ut3_eval);
@@ -223,11 +223,11 @@ fn main() {
 
     println!("alpha_beta");
     let s = Instant::now();
-    let ut3_eval = alpha_beta::<Ut3Handler, Ut3Board, 4>(
+    let ut3_eval = alpha_beta::<Ut3Handler, Ut3Board, 6>(
         &Ut3Handler::new(),
         Ut3Board::startpos(),
-        4,
-        4,
+        6,
+        6,
         Ut3Handler::EVAL_MINIMUM,
         Ut3Handler::EVAL_MAXIMUM,
     );
@@ -237,7 +237,7 @@ fn main() {
     println!("p_alpha_beta");
     let s = Instant::now();
     let ut3_eval =
-        p_alpha_beta::<Ut3Handler, Ut3Board>(&Ut3Handler::new(), Ut3Board::startpos(), 4, 4);
+        p_alpha_beta::<Ut3Handler, Ut3Board, 6>(&Ut3Handler::new(), Ut3Board::startpos(), 6, 6);
     println!("Ut3: {:?}", ut3_eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
