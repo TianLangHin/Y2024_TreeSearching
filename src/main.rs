@@ -150,7 +150,7 @@ fn main() {
 
     println!("alpha_beta");
     let s = Instant::now();
-    let stockman_eval = alpha_beta::<StockmanHandler, StockmanPos>(
+    let stockman_eval = alpha_beta::<StockmanHandler, StockmanPos, 4>(
         &StockmanHandler::new(),
         StockmanPos::startpos(),
         4,
@@ -223,7 +223,7 @@ fn main() {
 
     println!("alpha_beta");
     let s = Instant::now();
-    let ut3_eval = alpha_beta::<Ut3Handler, Ut3Board>(
+    let ut3_eval = alpha_beta::<Ut3Handler, Ut3Board, 4>(
         &Ut3Handler::new(),
         Ut3Board::startpos(),
         4,
