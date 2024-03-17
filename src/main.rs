@@ -174,7 +174,7 @@ fn main() {
 
     println!("pvs");
     let s = Instant::now();
-    let stockman_eval = pvs::<StockmanHandler, StockmanPos>(
+    let stockman_eval = pvs::<StockmanHandler, StockmanPos, 4>(
         &StockmanHandler::new(),
         StockmanPos::startpos(),
         4,
@@ -243,11 +243,11 @@ fn main() {
 
     println!("pvs");
     let s = Instant::now();
-    let ut3_eval = pvs::<Ut3Handler, Ut3Board>(
+    let ut3_eval = pvs::<Ut3Handler, Ut3Board, 6>(
         &Ut3Handler::new(),
         Ut3Board::startpos(),
-        4,
-        4,
+        6,
+        6,
         Ut3Handler::EVAL_MINIMUM,
         Ut3Handler::EVAL_MAXIMUM,
     );
