@@ -474,7 +474,11 @@ impl ChessPos {
     }
 
     pub fn to_fen(&self) -> String {
-        let pos = if ((self.squares >> 19) & 1) == 1 { self.flip_position() } else { *self };
+        let pos = if ((self.squares >> 19) & 1) == 1 {
+            self.flip_position()
+        } else {
+            *self
+        };
         let mut board: [char; 64] = ['.'; 64];
         for sq in 0..64 {
             if ((pos.own >> sq) & 1) == 1 {

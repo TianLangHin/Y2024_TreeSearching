@@ -12,7 +12,7 @@ pub fn branch_and_bound<THandler, TPosition, const SIZE: usize>(
     bound: <THandler as GameHandler<TPosition>>::Eval,
 ) -> (
     <THandler as GameHandler<TPosition>>::Eval,
-    [Option<<TPosition as GamePosition>::Move>; SIZE]
+    [Option<<TPosition as GamePosition>::Move>; SIZE],
 )
 where
     THandler: GameHandler<TPosition>,
@@ -78,7 +78,7 @@ pub fn alpha_beta<THandler, TPosition, const SIZE: usize>(
     beta: <THandler as GameHandler<TPosition>>::Eval,
 ) -> (
     <THandler as GameHandler<TPosition>>::Eval,
-    [Option<<TPosition as GamePosition>::Move>; SIZE]
+    [Option<<TPosition as GamePosition>::Move>; SIZE],
 )
 where
     THandler: GameHandler<TPosition>,
@@ -143,7 +143,7 @@ pub fn p_alpha_beta<THandler, TPosition, const SIZE: usize>(
     max_depth: usize,
 ) -> (
     <THandler as GameHandler<TPosition>>::Eval,
-    [Option<<TPosition as GamePosition>::Move>; SIZE]
+    [Option<<TPosition as GamePosition>::Move>; SIZE],
 )
 where
     THandler: GameHandler<TPosition>,
@@ -161,8 +161,13 @@ where
     if let Some(mv) = move_iter.next() {
         // Statement 6.
         let (mut m, mut pv) = p_alpha_beta::<THandler, TPosition, SIZE>(
-            handler, pos.play_move(mv), depth - 1, max_depth);
+            handler,
+            pos.play_move(mv),
+            depth - 1,
+            max_depth,
+        );
         m = -m;
+        pv[max_depth - depth] = Some(mv);
 
         // Statement 7.
         for mv in move_iter {
@@ -189,7 +194,8 @@ where
                     max_depth,
                     <THandler as GameHandler<TPosition>>::EVAL_MINIMUM,
                     -t,
-                ).0);
+                )
+                .0);
                 pv = line;
             }
         }
@@ -210,7 +216,7 @@ pub fn f_alpha_beta<THandler, TPosition, const SIZE: usize>(
     beta: <THandler as GameHandler<TPosition>>::Eval,
 ) -> (
     <THandler as GameHandler<TPosition>>::Eval,
-    [Option<<TPosition as GamePosition>::Move>; SIZE]
+    [Option<<TPosition as GamePosition>::Move>; SIZE],
 )
 where
     THandler: GameHandler<TPosition>,
@@ -277,7 +283,7 @@ pub fn pvs<THandler, TPosition, const SIZE: usize>(
     beta: <THandler as GameHandler<TPosition>>::Eval,
 ) -> (
     <THandler as GameHandler<TPosition>>::Eval,
-    [Option<<TPosition as GamePosition>::Move>; SIZE]
+    [Option<<TPosition as GamePosition>::Move>; SIZE],
 )
 where
     THandler: GameHandler<TPosition>,
@@ -357,12 +363,15 @@ where
 }
 
 // Algorithm E.
-pub fn scout<THandler, TPosition>(
+pub fn scout<THandler, TPosition, const SIZE: usize>(
     handler: &THandler,
     pos: TPosition,
     depth: usize,
     max_depth: usize,
-) -> <THandler as GameHandler<TPosition>>::Eval
+) -> (
+    <THandler as GameHandler<TPosition>>::Eval,
+    [Option<<TPosition as GamePosition>::Move>; SIZE],
+)
 where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
@@ -370,7 +379,7 @@ where
     // A node `max_depth` plies ahead of the root is considered a leaf.
     // Statement 5.
     if depth == 0 {
-        return handler.evaluate(pos, depth, max_depth);
+        return (handler.evaluate(pos, depth, max_depth), [None; SIZE]);
     }
 
     // Statement 4.
@@ -378,7 +387,10 @@ where
 
     if let Some(mv) = move_iter.next() {
         // Statement 6.
-        let mut m = -scout::<THandler, TPosition>(handler, pos.play_move(mv), depth - 1, max_depth);
+        let (mut m, mut pv) =
+            scout::<THandler, TPosition, SIZE>(handler, pos.play_move(mv), depth - 1, max_depth);
+        m = -m;
+        pv[max_depth - depth] = Some(mv);
 
         // Statement 7.
         let op = true;
@@ -389,14 +401,19 @@ where
 
             // Statement 9.
             if !test::<THandler, TPosition>(handler, next_pos, depth - 1, max_depth, -m, !op) {
-                m = -scout::<THandler, TPosition>(handler, next_pos, depth - 1, max_depth);
+                let (new_m, mut line) =
+                    scout::<THandler, TPosition, SIZE>(handler, next_pos, depth - 1, max_depth);
+                let new_m = -new_m;
+                line[max_depth - depth] = Some(mv);
+                m = new_m;
+                pv = line;
             }
         }
 
-        m
+        (m, pv)
     } else {
         // Statement 5.
-        handler.evaluate(pos, depth, max_depth)
+        (handler.evaluate(pos, depth, max_depth), [None; SIZE])
     }
 }
 
