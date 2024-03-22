@@ -25,3 +25,4 @@ Currently, the following game trees are implemented in `src/games`.
 * A representation of the sample game tree in Stockman's (1979) original proposal of SSS*, defined in `stockman.rs`.
 * A representation of Ultimate Tic-Tac-Toe using bitboards, defined in `ut3.rs`.
 * A representation of Chess using bitboards (particularly magic lookups), defined in `chess.rs`.
+* A representation of a uniform game tree of constant branching factor 2, and has randomly assigned node values based on the `rand_chacha` crate, defined in `uniform_2b_wide.rs`.

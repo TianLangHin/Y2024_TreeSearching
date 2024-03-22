@@ -1,5 +1,6 @@
 use crate::games::chess::*;
 use crate::games::stockman::*;
+use crate::games::uniform_2b_wide::*;
 use crate::games::ut3::*;
 use crate::prelude::*;
 use crate::search::*;
@@ -13,7 +14,7 @@ use rayon::prelude::*;
 use std::time::Instant;
 
 fn test_stockman_tree() {
-    let handler = StockmanHandler::new();
+    let handler = StockmanHandler::new(());
     let mut nodes = vec![StockmanPos::startpos()];
     while !nodes.is_empty() {
         dbg!(&nodes);
@@ -138,8 +139,8 @@ fn main() {
 
     println!("branch_and_bound");
     let s = Instant::now();
-    let stockman_eval = branch_and_bound::<StockmanHandler, StockmanPos, 4>(
-        &StockmanHandler::new(),
+    let stockman_eval = branch_and_bound::<StockmanHandler, StockmanPos, (), 4>(
+        &StockmanHandler::new(()),
         StockmanPos::startpos(),
         4,
         4,
@@ -150,8 +151,8 @@ fn main() {
 
     println!("alpha_beta");
     let s = Instant::now();
-    let stockman_eval = alpha_beta::<StockmanHandler, StockmanPos, 4>(
-        &StockmanHandler::new(),
+    let stockman_eval = alpha_beta::<StockmanHandler, StockmanPos, (), 4>(
+        &StockmanHandler::new(()),
         StockmanPos::startpos(),
         4,
         4,
@@ -163,8 +164,8 @@ fn main() {
 
     println!("p_alpha_beta");
     let s = Instant::now();
-    let stockman_eval = p_alpha_beta::<StockmanHandler, StockmanPos, 4>(
-        &StockmanHandler::new(),
+    let stockman_eval = p_alpha_beta::<StockmanHandler, StockmanPos, (), 4>(
+        &StockmanHandler::new(()),
         StockmanPos::startpos(),
         4,
         4,
@@ -174,8 +175,8 @@ fn main() {
 
     println!("pvs");
     let s = Instant::now();
-    let stockman_eval = pvs::<StockmanHandler, StockmanPos, 4>(
-        &StockmanHandler::new(),
+    let stockman_eval = pvs::<StockmanHandler, StockmanPos, (), 4>(
+        &StockmanHandler::new(()),
         StockmanPos::startpos(),
         4,
         4,
@@ -187,8 +188,8 @@ fn main() {
 
     println!("scout");
     let s = Instant::now();
-    let stockman_eval = scout::<StockmanHandler, StockmanPos, 4>(
-        &StockmanHandler::new(),
+    let stockman_eval = scout::<StockmanHandler, StockmanPos, (), 4>(
+        &StockmanHandler::new(()),
         StockmanPos::startpos(),
         4,
         4,
@@ -198,8 +199,8 @@ fn main() {
 
     println!("state space search");
     let s = Instant::now();
-    let stockman_eval = sss::<StockmanHandler, StockmanPos>(
-        &StockmanHandler::new(),
+    let stockman_eval = sss::<StockmanHandler, StockmanPos, ()>(
+        &StockmanHandler::new(()),
         StockmanPos::startpos(),
         10,
         10,
@@ -213,8 +214,8 @@ fn main() {
 
     println!("branch_and_bound");
     let s = Instant::now();
-    let ut3_eval = branch_and_bound::<Ut3Handler, Ut3Board, ut3_depth>(
-        &Ut3Handler::new(),
+    let ut3_eval = branch_and_bound::<Ut3Handler, Ut3Board, (), ut3_depth>(
+        &Ut3Handler::new(()),
         Ut3Board::startpos(),
         ut3_depth,
         ut3_depth,
@@ -225,8 +226,8 @@ fn main() {
 
     println!("alpha_beta");
     let s = Instant::now();
-    let ut3_eval = alpha_beta::<Ut3Handler, Ut3Board, ut3_depth>(
-        &Ut3Handler::new(),
+    let ut3_eval = alpha_beta::<Ut3Handler, Ut3Board, (), ut3_depth>(
+        &Ut3Handler::new(()),
         Ut3Board::startpos(),
         ut3_depth,
         ut3_depth,
@@ -238,8 +239,8 @@ fn main() {
 
     println!("p_alpha_beta");
     let s = Instant::now();
-    let ut3_eval = p_alpha_beta::<Ut3Handler, Ut3Board, ut3_depth>(
-        &Ut3Handler::new(),
+    let ut3_eval = p_alpha_beta::<Ut3Handler, Ut3Board, (), ut3_depth>(
+        &Ut3Handler::new(()),
         Ut3Board::startpos(),
         ut3_depth,
         ut3_depth,
@@ -249,8 +250,8 @@ fn main() {
 
     println!("pvs");
     let s = Instant::now();
-    let ut3_eval = pvs::<Ut3Handler, Ut3Board, ut3_depth>(
-        &Ut3Handler::new(),
+    let ut3_eval = pvs::<Ut3Handler, Ut3Board, (), ut3_depth>(
+        &Ut3Handler::new(()),
         Ut3Board::startpos(),
         ut3_depth,
         ut3_depth,
@@ -262,8 +263,8 @@ fn main() {
 
     println!("scout");
     let s = Instant::now();
-    let ut3_eval = scout::<Ut3Handler, Ut3Board, ut3_depth>(
-        &Ut3Handler::new(),
+    let ut3_eval = scout::<Ut3Handler, Ut3Board, (), ut3_depth>(
+        &Ut3Handler::new(()),
         Ut3Board::startpos(),
         ut3_depth,
         ut3_depth,
@@ -275,10 +276,11 @@ fn main() {
     // Maybe use BTreeMap.
     println!("state space search");
     let s = Instant::now();
-    let ut3_eval = sss::<Ut3Handler, Ut3Board>(&Ut3Handler::new(), Ut3Board::startpos(), 4, 4);
+    let ut3_eval = sss::<Ut3Handler, Ut3Board, ()>(&Ut3Handler::new(()), Ut3Board::startpos(), 4, 4);
     println!("Ut3: {:?}", ut3_eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
+    /*
     let positions = vec![
         Some(ChessPos::startpos()),
         ChessPos::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1"),
@@ -293,7 +295,61 @@ fn main() {
         let pos = some_p.unwrap();
         println!("perft 6");
         println!("{}", pos.to_fen());
-        perft_div_main_par(6, pos, &ChessHandler::new());
-        // perft_div_main(6, pos, &ChessHandler::new());
+        perft_div_main_par(6, pos, &ChessHandler::new(()));
+        // perft_div_main(6, pos, &ChessHandler::new(()));
     }
+    */
+
+    const depth: usize = 30;
+    let unif_2b_wide_handler = Uniform2bWideHandler::new(Uniform2bWideParams { depth: depth as u32, seed: 314159 });
+    println!("branch_and_bound");
+    let s = Instant::now();
+    let eval = branch_and_bound::<Uniform2bWideHandler, Uniform2bWidePos, Uniform2bWideParams, depth>(
+        &unif_2b_wide_handler,
+        Uniform2bWidePos::startpos(),
+        depth,
+        depth,
+        Uniform2bWideHandler::EVAL_MINIMUM,
+    );
+    println!("Unif2bWide: {:?}", eval);
+    println!("Time elapsed: {} ms", s.elapsed().as_millis());
+
+    println!("alpha_beta");
+    let s = Instant::now();
+    let eval = alpha_beta::<Uniform2bWideHandler, Uniform2bWidePos, Uniform2bWideParams, depth>(
+        &unif_2b_wide_handler,
+        Uniform2bWidePos::startpos(),
+        depth,
+        depth,
+        Uniform2bWideHandler::EVAL_MINIMUM,
+        Uniform2bWideHandler::EVAL_MAXIMUM,
+    );
+    println!("Unif2bWide: {:?}", eval);
+    println!("Time elapsed: {} ms", s.elapsed().as_millis());
+
+    println!("p_alpha_beta");
+    let s = Instant::now();
+    let eval = p_alpha_beta::<Uniform2bWideHandler, Uniform2bWidePos, Uniform2bWideParams, depth>(
+        &unif_2b_wide_handler,
+        Uniform2bWidePos::startpos(),
+        depth,
+        depth,
+    );
+    println!("Unif2bWide: {:?}", eval);
+    println!("Time elapsed: {} ms", s.elapsed().as_millis());
+
+    println!("pvs");
+    let s = Instant::now();
+    let eval = pvs::<Uniform2bWideHandler, Uniform2bWidePos, Uniform2bWideParams, depth>(
+        &unif_2b_wide_handler,
+        Uniform2bWidePos::startpos(),
+        depth,
+        depth,
+        Uniform2bWideHandler::EVAL_MINIMUM,
+        Uniform2bWideHandler::EVAL_MAXIMUM,
+    );
+    println!("Unif2bWide: {:?}", eval);
+    println!("Time elapsed: {} ms", s.elapsed().as_millis());
+
+    // dbg!(unif_2b_wide_handler.node_values);
 }
