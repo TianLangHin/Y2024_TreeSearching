@@ -1121,14 +1121,14 @@ impl ChessHandler {
     }
 }
 
-impl GameHandler<ChessPos> for ChessHandler {
+impl GameHandler<ChessPos, ()> for ChessHandler {
     type Eval = i32;
 
     const EVAL_MINIMUM: i32 = -100000000;
     const EVAL_MAXIMUM: i32 = 100000000;
     const EVAL_EPSILON: i32 = 1;
 
-    fn new() -> Self {
+    fn new(_: ()) -> Self {
         let mut bishop_table: [SMagic; 64] = std::array::from_fn(|_| SMagic::empty());
         let mut rook_table: [SMagic; 64] = std::array::from_fn(|_| SMagic::empty());
         for square in 0u64..64u64 {

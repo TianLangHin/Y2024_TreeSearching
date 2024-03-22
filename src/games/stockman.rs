@@ -32,14 +32,14 @@ impl GamePosition for StockmanPos {
     }
 }
 
-impl GameHandler<StockmanPos> for StockmanHandler {
+impl GameHandler<StockmanPos, ()> for StockmanHandler {
     type Eval = i32;
 
     const EVAL_MINIMUM: i32 = -100;
     const EVAL_MAXIMUM: i32 = 100;
     const EVAL_EPSILON: i32 = 1;
 
-    fn new() -> Self {
+    fn new(_: ()) -> Self {
         Self {}
     }
 
