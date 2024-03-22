@@ -12,8 +12,8 @@ pub struct Uniform2bWidePos {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Uniform2bWideMove {
-    LeftChild,
-    RightChild,
+    Left,
+    Right,
 }
 
 impl GamePosition for Uniform2bWidePos {
@@ -25,10 +25,10 @@ impl GamePosition for Uniform2bWidePos {
 
     fn play_move(&self, mv: Self::Move) -> Self {
         match mv {
-            Uniform2bWideMove::LeftChild => Self {
+            Uniform2bWideMove::Left => Self {
                 node: self.node << 1,
             },
-            Uniform2bWideMove::RightChild => Self {
+            Uniform2bWideMove::Right => Self {
                 node: (self.node << 1) + 1,
             },
         }
@@ -37,12 +37,19 @@ impl GamePosition for Uniform2bWidePos {
 
 pub struct Uniform2bWideHandler {
     leaf_start: u32,
-    pub node_values: BTreeMap<u32, i32>,
+    node_values: BTreeMap<u32, i32>,
 }
 
 pub struct Uniform2bWideParams {
     pub depth: u32,
     pub seed: u64,
+}
+
+// So that `node_values` does not have to be a public field
+impl Uniform2bWideHandler {
+    fn get_node_values(&self) -> BTreeMap<u32, i32> {
+        self.node_values.clone()
+    }
 }
 
 impl GameHandler<Uniform2bWidePos, Uniform2bWideParams> for Uniform2bWideHandler {
@@ -59,11 +66,13 @@ impl GameHandler<Uniform2bWidePos, Uniform2bWideParams> for Uniform2bWideHandler
         for node in 1 << depth..1 << (depth + 1) {
             node_values.insert(
                 node,
-                ((rng.next_u32() & 0xffff) as i32)
-                    * if (rng.next_u32() & 1) == 1 { -1 } else { 1 }
+                ((rng.next_u32() & 0xffff) as i32) * if (rng.next_u32() & 1) == 1 { -1 } else { 1 },
             );
         }
-        Self { leaf_start: 1 << depth, node_values }
+        Self {
+            leaf_start: 1 << depth,
+            node_values,
+        }
     }
 
     fn get_legal_moves(
@@ -102,8 +111,8 @@ impl GameHandler<Uniform2bWidePos, Uniform2bWideParams> for Uniform2bWideHandler
             LegalMoves::NoMoves
         } else {
             LegalMoves::HasMoves(
-                std::iter::once(Uniform2bWideMove::LeftChild)
-                    .chain(std::iter::once(Uniform2bWideMove::RightChild)),
+                std::iter::once(Uniform2bWideMove::Left)
+                    .chain(std::iter::once(Uniform2bWideMove::Right)),
             )
         }
     }
