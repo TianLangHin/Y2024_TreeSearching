@@ -500,61 +500,61 @@ impl NodeType {
     }
 }
 
-pub fn sss<H, P, TParams>(
-    handler: &H,
-    root: P,
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct State<TPos, TEval>
+where
+    TPos: Clone + Copy + std::fmt::Debug + PartialEq + Eq,
+    TEval: Clone + Copy + std::fmt::Debug + PartialEq + Eq + PartialOrd + Ord,
+{
+    pub node: TPos,
+    pub status: Status,
+    pub node_type: NodeType,
+    pub merit: TEval,
+    pub depth: usize,
+}
+
+impl<TPos, TEval> PartialOrd for State<TPos, TEval>
+where
+    TPos: Clone + Copy + std::fmt::Debug + PartialEq + Eq,
+    TEval: Clone + Copy + std::fmt::Debug + PartialEq + Eq + PartialOrd + Ord,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<TPos, TEval> Ord for State<TPos, TEval>
+where
+    TPos: Clone + Copy + std::fmt::Debug + PartialEq + Eq,
+    TEval: Clone + Copy + std::fmt::Debug + PartialEq + Eq + PartialOrd + Ord,
+{
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.merit.cmp(&other.merit)
+    }
+}
+
+pub fn sss<THandler, TPosition, TParams>(
+    handler: &THandler,
+    root: TPosition,
     depth: usize,
     max_depth: usize,
-) -> <H as GameHandler<P, TParams>>::Eval
+) -> <THandler as GameHandler<TPosition, TParams>>::Eval
 where
-    H: GameHandler<P, TParams>,
-    P: GamePosition,
+    THandler: GameHandler<TPosition, TParams>,
+    TPosition: GamePosition,
 {
-    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    struct State<TPos, TEval>
-    where
-        TPos: Clone + Copy + std::fmt::Debug + PartialEq + Eq,
-        TEval: Clone + Copy + std::fmt::Debug + PartialEq + Eq + PartialOrd + Ord,
-    {
-        pub node: TPos,
-        pub status: Status,
-        pub node_type: NodeType,
-        pub merit: TEval,
-        pub depth: usize,
-    }
+    let mut parent_map: Vec<(TPosition, TPosition)> = Vec::new();
 
-    impl<TPos, TEval> PartialOrd for State<TPos, TEval>
-    where
-        TPos: Clone + Copy + std::fmt::Debug + PartialEq + Eq,
-        TEval: Clone + Copy + std::fmt::Debug + PartialEq + Eq + PartialOrd + Ord,
-    {
-        fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-            Some(self.cmp(other))
-        }
-    }
-
-    impl<TPos, TEval> Ord for State<TPos, TEval>
-    where
-        TPos: Clone + Copy + std::fmt::Debug + PartialEq + Eq,
-        TEval: Clone + Copy + std::fmt::Debug + PartialEq + Eq + PartialOrd + Ord,
-    {
-        fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-            self.merit.cmp(&other.merit)
-        }
-    }
-
-    let mut parent_map: Vec<(P, P)> = Vec::new();
-
-    let mut open: BinaryHeap<State<P, <H as GameHandler<P, TParams>>::Eval>> = BinaryHeap::new();
+    let mut open: BinaryHeap<
+        State<TPosition, <THandler as GameHandler<TPosition, TParams>>::Eval>,
+    > = BinaryHeap::new();
     open.push(State {
         node: root,
         status: Status::Live,
         node_type: NodeType::Max,
-        merit: <H as GameHandler<P, TParams>>::EVAL_MAXIMUM,
+        merit: <THandler as GameHandler<TPosition, TParams>>::EVAL_MAXIMUM,
         depth,
     });
-
-    let mut i: usize = 1;
 
     while let Some(State {
         node: n,
@@ -565,8 +565,6 @@ where
     }) = open.pop()
     {
         if d == max_depth && s == Status::Solved {
-            // As a debugging mechanism
-            println!("Iterations: {i}");
             return h;
         }
         if d != 0 {
@@ -689,7 +687,6 @@ where
                 }
             }
         }
-        i += 1;
     }
     panic!("State space operator is faulty");
 }
