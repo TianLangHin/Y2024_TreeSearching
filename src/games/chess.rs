@@ -1315,7 +1315,7 @@ impl GameHandler<ChessPos, ()> for ChessHandler {
         })
     }
 
-    fn evaluate(&self, pos: ChessPos, depth: usize, max_depth: usize) -> Self::Eval {
+    fn evaluate(&self, _pos: ChessPos, _depth: usize, _max_depth: usize) -> Self::Eval {
         todo!();
     }
 }
