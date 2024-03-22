@@ -210,15 +210,15 @@ fn main() {
 
     println!("Ut3");
 
-    const ut3_depth: usize = 6;
+    const UT3_DEPTH: usize = 6;
 
     println!("branch_and_bound");
     let s = Instant::now();
-    let ut3_eval = branch_and_bound::<Ut3Handler, Ut3Board, (), ut3_depth>(
+    let ut3_eval = branch_and_bound::<Ut3Handler, Ut3Board, (), UT3_DEPTH>(
         &Ut3Handler::new(()),
         Ut3Board::startpos(),
-        ut3_depth,
-        ut3_depth,
+        UT3_DEPTH,
+        UT3_DEPTH,
         Ut3Handler::EVAL_MAXIMUM,
     );
     println!("Ut3: {:?}", ut3_eval);
@@ -226,11 +226,11 @@ fn main() {
 
     println!("alpha_beta");
     let s = Instant::now();
-    let ut3_eval = alpha_beta::<Ut3Handler, Ut3Board, (), ut3_depth>(
+    let ut3_eval = alpha_beta::<Ut3Handler, Ut3Board, (), UT3_DEPTH>(
         &Ut3Handler::new(()),
         Ut3Board::startpos(),
-        ut3_depth,
-        ut3_depth,
+        UT3_DEPTH,
+        UT3_DEPTH,
         Ut3Handler::EVAL_MINIMUM,
         Ut3Handler::EVAL_MAXIMUM,
     );
@@ -239,22 +239,22 @@ fn main() {
 
     println!("p_alpha_beta");
     let s = Instant::now();
-    let ut3_eval = p_alpha_beta::<Ut3Handler, Ut3Board, (), ut3_depth>(
+    let ut3_eval = p_alpha_beta::<Ut3Handler, Ut3Board, (), UT3_DEPTH>(
         &Ut3Handler::new(()),
         Ut3Board::startpos(),
-        ut3_depth,
-        ut3_depth,
+        UT3_DEPTH,
+        UT3_DEPTH,
     );
     println!("Ut3: {:?}", ut3_eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
     println!("pvs");
     let s = Instant::now();
-    let ut3_eval = pvs::<Ut3Handler, Ut3Board, (), ut3_depth>(
+    let ut3_eval = pvs::<Ut3Handler, Ut3Board, (), UT3_DEPTH>(
         &Ut3Handler::new(()),
         Ut3Board::startpos(),
-        ut3_depth,
-        ut3_depth,
+        UT3_DEPTH,
+        UT3_DEPTH,
         Ut3Handler::EVAL_MINIMUM,
         Ut3Handler::EVAL_MAXIMUM,
     );
@@ -263,11 +263,11 @@ fn main() {
 
     println!("scout");
     let s = Instant::now();
-    let ut3_eval = scout::<Ut3Handler, Ut3Board, (), ut3_depth>(
+    let ut3_eval = scout::<Ut3Handler, Ut3Board, (), UT3_DEPTH>(
         &Ut3Handler::new(()),
         Ut3Board::startpos(),
-        ut3_depth,
-        ut3_depth,
+        UT3_DEPTH,
+        UT3_DEPTH,
     );
     println!("Ut3: {:?}", ut3_eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
@@ -276,7 +276,8 @@ fn main() {
     // Maybe use BTreeMap.
     println!("state space search");
     let s = Instant::now();
-    let ut3_eval = sss::<Ut3Handler, Ut3Board, ()>(&Ut3Handler::new(()), Ut3Board::startpos(), 4, 4);
+    let ut3_eval =
+        sss::<Ut3Handler, Ut3Board, ()>(&Ut3Handler::new(()), Ut3Board::startpos(), 4, 4);
     println!("Ut3: {:?}", ut3_eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
@@ -300,27 +301,30 @@ fn main() {
     }
     */
 
-    const depth: usize = 30;
-    let unif_2b_wide_handler = Uniform2bWideHandler::new(Uniform2bWideParams { depth: depth as u32, seed: 314159 });
+    const DEPTH: usize = 16;
+    let unif_2b_wide_handler = Uniform2bWideHandler::new(Uniform2bWideParams {
+        depth: DEPTH as u32,
+        seed: 314159,
+    });
     println!("branch_and_bound");
     let s = Instant::now();
-    let eval = branch_and_bound::<Uniform2bWideHandler, Uniform2bWidePos, Uniform2bWideParams, depth>(
+    let eval = branch_and_bound::<Uniform2bWideHandler, Uniform2bWidePos, Uniform2bWideParams, DEPTH>(
         &unif_2b_wide_handler,
         Uniform2bWidePos::startpos(),
-        depth,
-        depth,
-        Uniform2bWideHandler::EVAL_MINIMUM,
+        DEPTH,
+        DEPTH,
+        Uniform2bWideHandler::EVAL_MAXIMUM,
     );
     println!("Unif2bWide: {:?}", eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
     println!("alpha_beta");
     let s = Instant::now();
-    let eval = alpha_beta::<Uniform2bWideHandler, Uniform2bWidePos, Uniform2bWideParams, depth>(
+    let eval = alpha_beta::<Uniform2bWideHandler, Uniform2bWidePos, Uniform2bWideParams, DEPTH>(
         &unif_2b_wide_handler,
         Uniform2bWidePos::startpos(),
-        depth,
-        depth,
+        DEPTH,
+        DEPTH,
         Uniform2bWideHandler::EVAL_MINIMUM,
         Uniform2bWideHandler::EVAL_MAXIMUM,
     );
@@ -329,27 +333,47 @@ fn main() {
 
     println!("p_alpha_beta");
     let s = Instant::now();
-    let eval = p_alpha_beta::<Uniform2bWideHandler, Uniform2bWidePos, Uniform2bWideParams, depth>(
+    let eval = p_alpha_beta::<Uniform2bWideHandler, Uniform2bWidePos, Uniform2bWideParams, DEPTH>(
         &unif_2b_wide_handler,
         Uniform2bWidePos::startpos(),
-        depth,
-        depth,
+        DEPTH,
+        DEPTH,
     );
     println!("Unif2bWide: {:?}", eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
     println!("pvs");
     let s = Instant::now();
-    let eval = pvs::<Uniform2bWideHandler, Uniform2bWidePos, Uniform2bWideParams, depth>(
+    let eval = pvs::<Uniform2bWideHandler, Uniform2bWidePos, Uniform2bWideParams, DEPTH>(
         &unif_2b_wide_handler,
         Uniform2bWidePos::startpos(),
-        depth,
-        depth,
+        DEPTH,
+        DEPTH,
         Uniform2bWideHandler::EVAL_MINIMUM,
         Uniform2bWideHandler::EVAL_MAXIMUM,
     );
     println!("Unif2bWide: {:?}", eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
-    // dbg!(unif_2b_wide_handler.node_values);
+    println!("scout");
+    let s = Instant::now();
+    let eval = scout::<Uniform2bWideHandler, Uniform2bWidePos, Uniform2bWideParams, DEPTH>(
+        &unif_2b_wide_handler,
+        Uniform2bWidePos::startpos(),
+        DEPTH,
+        DEPTH,
+    );
+    println!("Unif2bWide: {:?}", eval);
+    println!("Time elapsed: {} ms", s.elapsed().as_millis());
+
+    println!("state space search");
+    let s = Instant::now();
+    let eval = sss::<Uniform2bWideHandler, Uniform2bWidePos, Uniform2bWideParams>(
+        &unif_2b_wide_handler,
+        Uniform2bWidePos::startpos(),
+        DEPTH,
+        DEPTH,
+    );
+    println!("Unif2bWide: {:?}", eval);
+    println!("Time elapsed: {} ms", s.elapsed().as_millis());
 }
