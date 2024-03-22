@@ -1,6 +1,11 @@
 use crate::prelude::*;
 use std::collections::BinaryHeap;
 
+pub type MoveAndPV<THandler, TPosition, TParams, const SIZE: usize> = (
+    <THandler as GameHandler<TPosition, TParams>>::Eval,
+    [Option<<TPosition as GamePosition>::Move>; SIZE],
+);
+
 // Replication of algorithms described in Muszycka & Shinghal (1985).
 
 // Algorithm A.
@@ -10,10 +15,7 @@ pub fn branch_and_bound<THandler, TPosition, TParams, const SIZE: usize>(
     depth: usize,
     max_depth: usize,
     bound: <THandler as GameHandler<TPosition, TParams>>::Eval,
-) -> (
-    <THandler as GameHandler<TPosition, TParams>>::Eval,
-    [Option<<TPosition as GamePosition>::Move>; SIZE],
-)
+) -> MoveAndPV<THandler, TPosition, TParams, SIZE>
 where
     THandler: GameHandler<TPosition, TParams>,
     TPosition: GamePosition,
@@ -76,10 +78,7 @@ pub fn alpha_beta<THandler, TPosition, TParams, const SIZE: usize>(
     max_depth: usize,
     alpha: <THandler as GameHandler<TPosition, TParams>>::Eval,
     beta: <THandler as GameHandler<TPosition, TParams>>::Eval,
-) -> (
-    <THandler as GameHandler<TPosition, TParams>>::Eval,
-    [Option<<TPosition as GamePosition>::Move>; SIZE],
-)
+) -> MoveAndPV<THandler, TPosition, TParams, SIZE>
 where
     THandler: GameHandler<TPosition, TParams>,
     TPosition: GamePosition,
@@ -141,10 +140,7 @@ pub fn p_alpha_beta<THandler, TPosition, TParams, const SIZE: usize>(
     pos: TPosition,
     depth: usize,
     max_depth: usize,
-) -> (
-    <THandler as GameHandler<TPosition, TParams>>::Eval,
-    [Option<<TPosition as GamePosition>::Move>; SIZE],
-)
+) -> MoveAndPV<THandler, TPosition, TParams, SIZE>
 where
     THandler: GameHandler<TPosition, TParams>,
     TPosition: GamePosition,
@@ -214,10 +210,7 @@ pub fn f_alpha_beta<THandler, TPosition, TParams, const SIZE: usize>(
     max_depth: usize,
     alpha: <THandler as GameHandler<TPosition, TParams>>::Eval,
     beta: <THandler as GameHandler<TPosition, TParams>>::Eval,
-) -> (
-    <THandler as GameHandler<TPosition, TParams>>::Eval,
-    [Option<<TPosition as GamePosition>::Move>; SIZE],
-)
+) -> MoveAndPV<THandler, TPosition, TParams, SIZE>
 where
     THandler: GameHandler<TPosition, TParams>,
     TPosition: GamePosition,
@@ -281,10 +274,7 @@ pub fn pvs<THandler, TPosition, TParams, const SIZE: usize>(
     max_depth: usize,
     alpha: <THandler as GameHandler<TPosition, TParams>>::Eval,
     beta: <THandler as GameHandler<TPosition, TParams>>::Eval,
-) -> (
-    <THandler as GameHandler<TPosition, TParams>>::Eval,
-    [Option<<TPosition as GamePosition>::Move>; SIZE],
-)
+) -> MoveAndPV<THandler, TPosition, TParams, SIZE>
 where
     THandler: GameHandler<TPosition, TParams>,
     TPosition: GamePosition,
@@ -368,10 +358,7 @@ pub fn scout<THandler, TPosition, TParams, const SIZE: usize>(
     pos: TPosition,
     depth: usize,
     max_depth: usize,
-) -> (
-    <THandler as GameHandler<TPosition, TParams>>::Eval,
-    [Option<<TPosition as GamePosition>::Move>; SIZE],
-)
+) -> MoveAndPV<THandler, TPosition, TParams, SIZE>
 where
     THandler: GameHandler<TPosition, TParams>,
     TPosition: GamePosition,
@@ -387,8 +374,12 @@ where
 
     if let Some(mv) = move_iter.next() {
         // Statement 6.
-        let (mut m, mut pv) =
-            scout::<THandler, TPosition, TParams, SIZE>(handler, pos.play_move(mv), depth - 1, max_depth);
+        let (mut m, mut pv) = scout::<THandler, TPosition, TParams, SIZE>(
+            handler,
+            pos.play_move(mv),
+            depth - 1,
+            max_depth,
+        );
         m = -m;
         pv[max_depth - depth] = Some(mv);
 
@@ -400,9 +391,20 @@ where
             let next_pos = pos.play_move(mv);
 
             // Statement 9.
-            if !test::<THandler, TPosition, TParams>(handler, next_pos, depth - 1, max_depth, -m, !op) {
-                let (new_m, mut line) =
-                    scout::<THandler, TPosition, TParams, SIZE>(handler, next_pos, depth - 1, max_depth);
+            if !test::<THandler, TPosition, TParams>(
+                handler,
+                next_pos,
+                depth - 1,
+                max_depth,
+                -m,
+                !op,
+            ) {
+                let (new_m, mut line) = scout::<THandler, TPosition, TParams, SIZE>(
+                    handler,
+                    next_pos,
+                    depth - 1,
+                    max_depth,
+                );
                 let new_m = -new_m;
                 line[max_depth - depth] = Some(mv);
                 m = new_m;
@@ -563,6 +565,7 @@ where
     }) = open.pop()
     {
         if d == max_depth && s == Status::Solved {
+            // As a debugging mechanism
             println!("Iterations: {i}");
             return h;
         }
