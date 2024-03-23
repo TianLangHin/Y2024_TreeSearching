@@ -480,12 +480,6 @@ where
 // Algorithm F.
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Status {
-    Live,
-    Solved,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum NodeType {
     Max,
     Min,
@@ -501,16 +495,23 @@ impl NodeType {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct State<TPos, TEval>
+enum State<TPos, TEval>
 where
     TPos: Clone + Copy + std::fmt::Debug + PartialEq + Eq,
     TEval: Clone + Copy + std::fmt::Debug + PartialEq + Eq + PartialOrd + Ord,
 {
-    pub node: TPos,
-    pub status: Status,
-    pub node_type: NodeType,
-    pub merit: TEval,
-    pub depth: usize,
+    Live {
+        node: TPos,
+        node_type: NodeType,
+        merit: TEval,
+        depth: usize,
+    },
+    Solved {
+        node: TPos,
+        node_type: NodeType,
+        merit: TEval,
+        depth: usize,
+    },
 }
 
 impl<TPos, TEval> PartialOrd for State<TPos, TEval>
@@ -529,7 +530,35 @@ where
     TEval: Clone + Copy + std::fmt::Debug + PartialEq + Eq + PartialOrd + Ord,
 {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.merit.cmp(&other.merit)
+        let self_merit = match self {
+            Self::Solved {
+                node: _,
+                node_type: _,
+                merit: m,
+                depth: _,
+            } => m,
+            Self::Live {
+                node: _,
+                node_type: _,
+                merit: m,
+                depth: _,
+            } => m,
+        };
+        let other_merit = match other {
+            Self::Solved {
+                node: _,
+                node_type: _,
+                merit: m,
+                depth: _,
+            } => m,
+            Self::Live {
+                node: _,
+                node_type: _,
+                merit: m,
+                depth: _,
+            } => m,
+        };
+        self_merit.cmp(other_merit)
     }
 }
 
@@ -548,33 +577,29 @@ where
     let mut open: BinaryHeap<
         State<TPosition, <THandler as GameHandler<TPosition, TParams>>::Eval>,
     > = BinaryHeap::new();
-    open.push(State {
+    open.push(State::Live {
         node: root,
-        status: Status::Live,
         node_type: NodeType::Max,
         merit: <THandler as GameHandler<TPosition, TParams>>::EVAL_MAXIMUM,
         depth,
     });
 
-    while let Some(State {
-        node: n,
-        status: s,
-        node_type: nt,
-        merit: h,
-        depth: d,
-    }) = open.pop()
-    {
-        if d == max_depth && s == Status::Solved {
-            return h;
-        }
-        if d != 0 {
-            for mv in handler.get_legal_moves(n) {
-                parent_map.push((n.play_move(mv), n));
-            }
-        }
-        let mut legal_moves = handler.get_legal_moves(n);
-        match s {
-            Status::Solved => {
+    while let Some(state) = open.pop() {
+        match state {
+            State::Solved {
+                node: n,
+                node_type: nt,
+                merit: h,
+                depth: d,
+            } => {
+                if d == max_depth {
+                    return h;
+                }
+                if d != 0 {
+                    for mv in handler.get_legal_moves(n) {
+                        parent_map.push((n.play_move(mv), n));
+                    }
+                }
                 let parent = parent_map
                     .iter()
                     .find(|&&(c, _)| c == n)
@@ -583,20 +608,32 @@ where
                 match nt {
                     NodeType::Min => {
                         // Case 1.
-                        let new_state = State {
+                        let new_state = State::Solved {
                             node: parent,
-                            status: Status::Solved,
                             node_type: nt.invert(),
                             merit: h,
                             depth: d + 1,
                         };
                         open.retain(|&state| {
                             let mut descendant = false;
-                            let mut querying_node = state.node;
+                            let mut querying_node = match state {
+                                State::Solved {
+                                    node: n,
+                                    node_type: _,
+                                    merit: _,
+                                    depth: _,
+                                } => n,
+                                State::Live {
+                                    node: n,
+                                    node_type: _,
+                                    merit: _,
+                                    depth: _,
+                                } => n,
+                            };
                             while let Some((_, p)) =
                                 parent_map.iter().find(|&&(c, _)| c == querying_node)
                             {
-                                if querying_node == new_state.node {
+                                if querying_node == parent {
                                     descendant = true;
                                     break;
                                 }
@@ -613,18 +650,16 @@ where
                             .nth(1)
                         {
                             // Case 2.
-                            open.push(State {
+                            open.push(State::Live {
                                 node: parent.play_move(next_move),
-                                status: Status::Live,
                                 node_type: nt,
                                 merit: h,
                                 depth: d,
                             });
                         } else {
                             // Case 3.
-                            open.push(State {
+                            open.push(State::Solved {
                                 node: parent,
-                                status: Status::Solved,
                                 node_type: nt.invert(),
                                 merit: h,
                                 depth: d + 1,
@@ -633,41 +668,48 @@ where
                     }
                 }
             }
-            Status::Live => {
+            State::Live {
+                node: n,
+                node_type: nt,
+                merit: h,
+                depth: d,
+            } => {
+                let mut legal_moves = handler.get_legal_moves(n);
                 if d == 0 {
                     // Extension of Case 4. `max_depth` plies from root is considered leaf.
-                    open.push(State {
+                    open.push(State::Solved {
                         node: n,
-                        status: Status::Solved,
                         node_type: nt,
                         merit: std::cmp::min(h, handler.evaluate(n, depth, max_depth)),
                         depth: d,
                     });
                 } else if let Some(first_move) = legal_moves.next() {
+                    parent_map.push((n.play_move(first_move), n));
                     match nt {
                         NodeType::Min => {
                             // Case 5.
-                            open.push(State {
+                            open.push(State::Live {
                                 node: n.play_move(first_move),
-                                status: Status::Live,
-                                node_type: nt.invert(),
-                                merit: h,
-                                depth: d - 1,
-                            });
-                        }
-                        NodeType::Max => {
-                            // Case 6.
-                            open.push(State {
-                                node: n.play_move(first_move),
-                                status: Status::Live,
                                 node_type: nt.invert(),
                                 merit: h,
                                 depth: d - 1,
                             });
                             for mv in legal_moves {
-                                open.push(State {
+                                parent_map.push((n.play_move(mv), n));
+                            }
+                        }
+                        NodeType::Max => {
+                            // Case 6.
+                            open.push(State::Live {
+                                node: n.play_move(first_move),
+                                node_type: nt.invert(),
+                                merit: h,
+                                depth: d - 1,
+                            });
+                            for mv in legal_moves {
+                                parent_map.push((n.play_move(mv), n));
+                                open.push(State::Live {
                                     node: n.play_move(mv),
-                                    status: Status::Live,
                                     node_type: nt.invert(),
                                     merit: h,
                                     depth: d - 1,
@@ -677,9 +719,8 @@ where
                     }
                 } else {
                     // Next legal move is `None` on first attempt: leaf node. Thus, Case 4.
-                    open.push(State {
+                    open.push(State::Solved {
                         node: n,
-                        status: Status::Solved,
                         node_type: nt,
                         merit: std::cmp::min(h, handler.evaluate(n, depth, max_depth)),
                         depth: d,
