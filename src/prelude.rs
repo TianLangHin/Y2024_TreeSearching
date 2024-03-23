@@ -4,9 +4,9 @@ pub trait GamePosition: Clone + Copy + std::fmt::Debug + PartialEq + Eq {
     fn play_move(&self, mv: Self::Move) -> Self;
 }
 
-pub trait GameHandler<GP, Params>
+pub trait GameHandler<TPosition, Params>
 where
-    GP: GamePosition,
+    TPosition: GamePosition,
 {
     type Eval: Clone
         + Copy
@@ -25,6 +25,6 @@ where
     const EVAL_EPSILON: Self::Eval;
 
     fn new(params: Params) -> Self;
-    fn get_legal_moves(&self, pos: GP) -> impl Iterator<Item = <GP as GamePosition>::Move>;
-    fn evaluate(&self, pos: GP, depth: usize, max_depth: usize) -> Self::Eval;
+    fn get_legal_moves(&self, pos: TPosition) -> impl Iterator<Item = <TPosition as GamePosition>::Move>;
+    fn evaluate(&self, pos: TPosition, depth: usize, max_depth: usize) -> Self::Eval;
 }
