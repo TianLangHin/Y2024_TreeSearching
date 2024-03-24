@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+use rand::Rng;
 use rand_chacha::rand_core::{RngCore, SeedableRng};
 use rand_chacha::ChaChaRng;
 
@@ -66,7 +67,7 @@ impl GameHandler<Uniform2bWidePos, Uniform2bWideParams> for Uniform2bWideHandler
         for node in 1 << depth..1 << (depth + 1) {
             node_values.insert(
                 node,
-                ((rng.next_u32() & 0xffff) as i32) * if (rng.next_u32() & 1) == 1 { -1 } else { 1 },
+                rng.gen_range(-100..=100),
             );
         }
         Self {
