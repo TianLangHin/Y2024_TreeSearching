@@ -374,12 +374,8 @@ where
 
     if let Some(mv) = move_iter.next() {
         // Statement 6.
-        let (mut m, mut pv) = scout::<THandler, TPosition, SIZE>(
-            handler,
-            pos.play_move(mv),
-            depth - 1,
-            max_depth,
-        );
+        let (mut m, mut pv) =
+            scout::<THandler, TPosition, SIZE>(handler, pos.play_move(mv), depth - 1, max_depth);
         m = -m;
         pv[max_depth - depth] = Some(mv);
 
@@ -391,20 +387,9 @@ where
             let next_pos = pos.play_move(mv);
 
             // Statement 9.
-            if !test::<THandler, TPosition>(
-                handler,
-                next_pos,
-                depth - 1,
-                max_depth,
-                -m,
-                !op,
-            ) {
-                let (new_m, mut line) = scout::<THandler, TPosition, SIZE>(
-                    handler,
-                    next_pos,
-                    depth - 1,
-                    max_depth,
-                );
+            if !test::<THandler, TPosition>(handler, next_pos, depth - 1, max_depth, -m, !op) {
+                let (new_m, mut line) =
+                    scout::<THandler, TPosition, SIZE>(handler, next_pos, depth - 1, max_depth);
                 let new_m = -new_m;
                 line[max_depth - depth] = Some(mv);
                 m = new_m;
@@ -586,14 +571,17 @@ where
             TPosition,
             <THandler as GameHandler<TPosition>>::Eval,
             <TPosition as GamePosition>::Move,
-            SIZE
+            SIZE,
         >,
     > = BinaryHeap::new();
 
     open.push(State::Live {
         node: root,
         node_type: NodeType::Max,
-        merit: (<THandler as GameHandler<TPosition>>::EVAL_MAXIMUM, [None; SIZE]),
+        merit: (
+            <THandler as GameHandler<TPosition>>::EVAL_MAXIMUM,
+            [None; SIZE],
+        ),
         depth,
         line: [None; SIZE],
     });
@@ -635,10 +623,10 @@ where
                                     line,
                                 } => line,
                             })
-                                .iter()
-                                .zip(l.iter())
-                                .take(path_length)
-                                .any(|(&best, &discard)| best != discard)
+                            .iter()
+                            .zip(l.iter())
+                            .take(path_length)
+                            .any(|(&best, &discard)| best != discard)
                         });
                         open.push(State::Solved {
                             node: parent,

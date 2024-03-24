@@ -278,7 +278,7 @@ fn main() {
         &Ut3Handler::new(()),
         Ut3Board::startpos(()),
         UT3_DEPTH,
-        UT3_DEPTH
+        UT3_DEPTH,
     );
     println!("Ut3: {:?}", ut3_eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
@@ -378,5 +378,4 @@ fn main() {
     );
     println!("Unif2bWide: {:?}", eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
-
 }

@@ -225,9 +225,7 @@ impl GameHandler<Ut3Board> for Ut3Handler {
                 let large = (share >> 36) | (share >> 45);
 
                 (0..63)
-                    .filter(move |i| {
-                        ((nw_to_sw >> i) & 1) == 0 && ((large >> (i / 9)) & 1) == 0
-                    })
+                    .filter(move |i| ((nw_to_sw >> i) & 1) == 0 && ((large >> (i / 9)) & 1) == 0)
                     .chain((63..81).filter(move |i| {
                         ((s_to_se >> (i - 63)) & 1) == 0 && ((large >> (i / 9)) & 1) == 0
                     }))

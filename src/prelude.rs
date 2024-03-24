@@ -28,6 +28,9 @@ where
     const EVAL_EPSILON: Self::Eval;
 
     fn new(params: Self::Params) -> Self;
-    fn get_legal_moves(&self, pos: TPosition) -> impl Iterator<Item = <TPosition as GamePosition>::Move>;
+    fn get_legal_moves(
+        &self,
+        pos: TPosition,
+    ) -> impl Iterator<Item = <TPosition as GamePosition>::Move>;
     fn evaluate(&self, pos: TPosition, depth: usize, max_depth: usize) -> Self::Eval;
 }

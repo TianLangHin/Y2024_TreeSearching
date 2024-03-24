@@ -69,10 +69,7 @@ impl GameHandler<Uniform2bWidePos> for Uniform2bWideHandler {
         let mut node_values: BTreeMap<u32, i32> = BTreeMap::new();
         let mut rng: ChaChaRng = ChaChaRng::seed_from_u64(seed);
         for node in 1 << depth..1 << (depth + 1) {
-            node_values.insert(
-                node,
-                rng.gen_range(-100..=100),
-            );
+            node_values.insert(node, rng.gen_range(-100..=100));
         }
         Self {
             leaf_start: 1 << depth,
