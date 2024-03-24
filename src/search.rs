@@ -615,7 +615,6 @@ where
                     parent = parent.play_move(l[i].unwrap());
                 }
                 let path_length = max_depth - d - 1;
-                let parent_path = &l[0..path_length];
                 match nt {
                     NodeType::Min => {
                         // Case 1.
@@ -637,8 +636,8 @@ where
                                 } => line,
                             })
                                 .iter()
+                                .zip(l.iter())
                                 .take(path_length)
-                                .zip(parent_path.iter())
                                 .any(|(&best, &discard)| best != discard)
                         });
                         open.push(State::Solved {
