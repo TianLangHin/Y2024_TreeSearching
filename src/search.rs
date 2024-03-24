@@ -611,10 +611,10 @@ where
                     return (h, pv);
                 }
                 let mut parent = root;
-                for i in 0..max_depth - d - 1 {
+                let path_length = max_depth - d - 1;
+                for i in 0..path_length {
                     parent = parent.play_move(l[i].unwrap());
                 }
-                let path_length = max_depth - d - 1;
                 match nt {
                     NodeType::Min => {
                         // Case 1.
