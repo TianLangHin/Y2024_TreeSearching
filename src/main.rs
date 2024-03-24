@@ -199,11 +199,11 @@ fn main() {
 
     println!("state space search");
     let s = Instant::now();
-    let stockman_eval = sss::<StockmanHandler, StockmanPos>(
+    let stockman_eval = sss::<StockmanHandler, StockmanPos, 4>(
         &StockmanHandler::new(()),
         StockmanPos::startpos(()),
-        10,
-        10,
+        4,
+        4,
     );
     println!("Stockman: {:?}", stockman_eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
@@ -274,8 +274,12 @@ fn main() {
 
     println!("state space search");
     let s = Instant::now();
-    let ut3_eval =
-        sss::<Ut3Handler, Ut3Board>(&Ut3Handler::new(()), Ut3Board::startpos(()), 4, 4);
+    let ut3_eval = sss::<Ut3Handler, Ut3Board, UT3_DEPTH>(
+        &Ut3Handler::new(()),
+        Ut3Board::startpos(()),
+        UT3_DEPTH,
+        UT3_DEPTH
+    );
     println!("Ut3: {:?}", ut3_eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
@@ -366,7 +370,7 @@ fn main() {
 
     println!("state space search");
     let s = Instant::now();
-    let eval = sss::<Uniform2bWideHandler, Uniform2bWidePos>(
+    let eval = sss::<Uniform2bWideHandler, Uniform2bWidePos, DEPTH>(
         &unif_2b_wide_handler,
         Uniform2bWidePos::startpos(()),
         DEPTH,
@@ -374,4 +378,5 @@ fn main() {
     );
     println!("Unif2bWide: {:?}", eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
+
 }
