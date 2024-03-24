@@ -1,5 +1,7 @@
 use crate::prelude::*;
 
+use auto_enums::auto_enum;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct StockmanPos {
     pub node: usize,
@@ -43,45 +45,16 @@ impl GameHandler<StockmanPos, ()> for StockmanHandler {
         Self {}
     }
 
+    #[auto_enum(Iterator)]
     fn get_legal_moves(
         &self,
         pos: StockmanPos,
     ) -> impl Iterator<Item = <StockmanPos as GamePosition>::Move> {
-        enum LegalMoves<T> {
-            NoMoves,
-            HasMoves(T),
-        }
-
-        impl<T> Iterator for LegalMoves<T>
-        where
-            T: Iterator,
-        {
-            type Item = <T as Iterator>::Item;
-
-            #[inline]
-            fn next(&mut self) -> Option<Self::Item> {
-                match self {
-                    Self::NoMoves => None,
-                    Self::HasMoves(x) => x.next(),
-                }
-            }
-
-            #[inline]
-            fn size_hint(&self) -> (usize, Option<usize>) {
-                match self {
-                    Self::NoMoves => (0, Some(0)),
-                    Self::HasMoves(x) => x.size_hint(),
-                }
-            }
-        }
-
         if pos.node > 15 {
-            LegalMoves::NoMoves
+            std::iter::empty()
         } else {
-            LegalMoves::HasMoves(
-                std::iter::once(StockmanMove::LeftChild)
-                    .chain(std::iter::once(StockmanMove::RightChild)),
-            )
+            std::iter::once(StockmanMove::LeftChild)
+                .chain(std::iter::once(StockmanMove::RightChild))
         }
     }
 

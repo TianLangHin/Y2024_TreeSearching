@@ -1,5 +1,7 @@
 use crate::prelude::*;
 
+use auto_enums::auto_enum;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Ut3Board {
     pub us: u64,
@@ -204,47 +206,12 @@ impl GameHandler<Ut3Board, ()> for Ut3Handler {
         }
     }
 
+    #[auto_enum(Iterator)]
     fn get_legal_moves(&self, board: Ut3Board) -> impl Iterator<Item = u64> {
-        enum LegalMoves<T1, T2, T3> {
-            NoMoves,
-            AllZones(T1),
-            FirstSeven(T2),
-            LastTwo(T3),
-        }
-
-        impl<T1, T2, T3> Iterator for LegalMoves<T1, T2, T3>
-        where
-            T1: Iterator,
-            T2: Iterator<Item = <T1 as Iterator>::Item>,
-            T3: Iterator<Item = <T1 as Iterator>::Item>,
-        {
-            type Item = <T1 as Iterator>::Item;
-
-            #[inline]
-            fn next(&mut self) -> Option<Self::Item> {
-                match self {
-                    Self::NoMoves => None,
-                    Self::AllZones(x) => x.next(),
-                    Self::FirstSeven(x) => x.next(),
-                    Self::LastTwo(x) => x.next(),
-                }
-            }
-
-            #[inline]
-            fn size_hint(&self) -> (usize, Option<usize>) {
-                match self {
-                    Self::NoMoves => (0, Some(0)),
-                    Self::AllZones(x) => x.size_hint(),
-                    Self::FirstSeven(x) => x.size_hint(),
-                    Self::LastTwo(x) => x.size_hint(),
-                }
-            }
-        }
-
         let Ut3Board { us, them, share } = board;
 
         if Ut3Board::line_presence(share >> 36) || Ut3Board::line_presence(share >> 45) {
-            return LegalMoves::NoMoves;
+            return std::iter::empty();
         }
 
         let zone = (share >> 54) & 0b1111;
@@ -255,27 +222,21 @@ impl GameHandler<Ut3Board, ()> for Ut3Handler {
                 let s_to_se = (share >> 18) | share;
                 let large = (share >> 36) | (share >> 45);
 
-                LegalMoves::AllZones(
-                    (0..63)
-                        .filter(move |i| {
-                            ((nw_to_sw >> i) & 1) == 0 && ((large >> (i / 9)) & 1) == 0
-                        })
-                        .chain((63..81).filter(move |i| {
-                            ((s_to_se >> (i - 63)) & 1) == 0 && ((large >> (i / 9)) & 1) == 0
-                        })),
-                )
+                (0..63)
+                    .filter(move |i| {
+                        ((nw_to_sw >> i) & 1) == 0 && ((large >> (i / 9)) & 1) == 0
+                    })
+                    .chain((63..81).filter(move |i| {
+                        ((s_to_se >> (i - 63)) & 1) == 0 && ((large >> (i / 9)) & 1) == 0
+                    }))
             }
             7 | 8 => {
                 let s_to_se = (share >> 18) | share;
-                LegalMoves::LastTwo(
-                    (9 * zone..9 * zone + 9).filter(move |i| ((s_to_se >> (i - 63)) & 1) == 0),
-                )
+                (9 * zone..9 * zone + 9).filter(move |i| ((s_to_se >> (i - 63)) & 1) == 0)
             }
             _ => {
                 let nw_to_sw = us | them;
-                LegalMoves::FirstSeven(
-                    (9 * zone..9 * zone + 9).filter(move |i| ((nw_to_sw >> i) & 1) == 0),
-                )
+                (9 * zone..9 * zone + 9).filter(move |i| ((nw_to_sw >> i) & 1) == 0)
             }
         }
     }

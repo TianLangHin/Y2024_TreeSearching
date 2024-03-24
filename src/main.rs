@@ -272,8 +272,6 @@ fn main() {
     println!("Ut3: {:?}", ut3_eval);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
-    // Compute time rises unexpectedly at >= 5ply, and still very slow.
-    // Maybe use BTreeMap.
     println!("state space search");
     let s = Instant::now();
     let ut3_eval =
