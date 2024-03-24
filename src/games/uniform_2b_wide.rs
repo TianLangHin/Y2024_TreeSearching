@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 use rand::Rng;
-use rand_chacha::rand_core::{RngCore, SeedableRng};
+use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaChaRng;
 
 use std::collections::BTreeMap;
