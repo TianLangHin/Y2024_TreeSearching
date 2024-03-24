@@ -19,8 +19,9 @@ pub enum Uniform2bWideMove {
 
 impl GamePosition for Uniform2bWidePos {
     type Move = Uniform2bWideMove;
+    type Params = ();
 
-    fn startpos() -> Self {
+    fn startpos(_: ()) -> Self {
         Self { node: 1 }
     }
 
@@ -53,8 +54,9 @@ impl Uniform2bWideHandler {
     }
 }
 
-impl GameHandler<Uniform2bWidePos, Uniform2bWideParams> for Uniform2bWideHandler {
+impl GameHandler<Uniform2bWidePos> for Uniform2bWideHandler {
     type Eval = i32;
+    type Params = Uniform2bWideParams;
 
     const EVAL_MINIMUM: i32 = -i32::MAX;
     const EVAL_MAXIMUM: i32 = i32::MAX;

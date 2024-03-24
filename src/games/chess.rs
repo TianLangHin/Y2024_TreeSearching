@@ -697,8 +697,9 @@ impl ChessPos {
 
 impl GamePosition for ChessPos {
     type Move = u64;
+    type Params = ();
 
-    fn startpos() -> Self {
+    fn startpos(_: ()) -> Self {
         Self {
             pawn: 0x00ff00000000ff00,
             ortho: 0x8900000000000089,
@@ -1121,8 +1122,9 @@ impl ChessHandler {
     }
 }
 
-impl GameHandler<ChessPos, ()> for ChessHandler {
+impl GameHandler<ChessPos> for ChessHandler {
     type Eval = i32;
+    type Params = ();
 
     const EVAL_MINIMUM: i32 = -100000000;
     const EVAL_MAXIMUM: i32 = 100000000;

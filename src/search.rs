@@ -1,23 +1,23 @@
 use crate::prelude::*;
 use std::collections::BinaryHeap;
 
-pub type MoveAndPV<THandler, TPosition, TParams, const SIZE: usize> = (
-    <THandler as GameHandler<TPosition, TParams>>::Eval,
+pub type MoveAndPV<THandler, TPosition, const SIZE: usize> = (
+    <THandler as GameHandler<TPosition>>::Eval,
     [Option<<TPosition as GamePosition>::Move>; SIZE],
 );
 
 // Replication of algorithms described in Muszycka & Shinghal (1985).
 
 // Algorithm A.
-pub fn branch_and_bound<THandler, TPosition, TParams, const SIZE: usize>(
+pub fn branch_and_bound<THandler, TPosition, const SIZE: usize>(
     handler: &THandler,
     pos: TPosition,
     depth: usize,
     max_depth: usize,
-    bound: <THandler as GameHandler<TPosition, TParams>>::Eval,
-) -> MoveAndPV<THandler, TPosition, TParams, SIZE>
+    bound: <THandler as GameHandler<TPosition>>::Eval,
+) -> MoveAndPV<THandler, TPosition, SIZE>
 where
-    THandler: GameHandler<TPosition, TParams>,
+    THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
     // A node `max_depth` plies ahead of the root is considered a leaf.
@@ -31,12 +31,12 @@ where
 
     if let Some(mut mv) = move_iter.next() {
         // Statement 6.
-        let mut m = <THandler as GameHandler<TPosition, TParams>>::EVAL_MINIMUM;
+        let mut m = <THandler as GameHandler<TPosition>>::EVAL_MINIMUM;
         let mut pv = [None; SIZE];
 
         loop {
             // Statement 9.
-            let (t, mut line) = branch_and_bound::<THandler, TPosition, TParams, SIZE>(
+            let (t, mut line) = branch_and_bound::<THandler, TPosition, SIZE>(
                 handler,
                 pos.play_move(mv),
                 depth - 1,
@@ -71,16 +71,16 @@ where
 }
 
 // Algorithm B.
-pub fn alpha_beta<THandler, TPosition, TParams, const SIZE: usize>(
+pub fn alpha_beta<THandler, TPosition, const SIZE: usize>(
     handler: &THandler,
     pos: TPosition,
     depth: usize,
     max_depth: usize,
-    alpha: <THandler as GameHandler<TPosition, TParams>>::Eval,
-    beta: <THandler as GameHandler<TPosition, TParams>>::Eval,
-) -> MoveAndPV<THandler, TPosition, TParams, SIZE>
+    alpha: <THandler as GameHandler<TPosition>>::Eval,
+    beta: <THandler as GameHandler<TPosition>>::Eval,
+) -> MoveAndPV<THandler, TPosition, SIZE>
 where
-    THandler: GameHandler<TPosition, TParams>,
+    THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
     // A node `max_depth` plies ahead of the root is considered a leaf.
@@ -99,7 +99,7 @@ where
 
         loop {
             // Statement 9.
-            let (t, mut line) = alpha_beta::<THandler, TPosition, TParams, SIZE>(
+            let (t, mut line) = alpha_beta::<THandler, TPosition, SIZE>(
                 handler,
                 pos.play_move(mv),
                 depth - 1,
@@ -135,14 +135,14 @@ where
 }
 
 // Algorithm C.
-pub fn p_alpha_beta<THandler, TPosition, TParams, const SIZE: usize>(
+pub fn p_alpha_beta<THandler, TPosition, const SIZE: usize>(
     handler: &THandler,
     pos: TPosition,
     depth: usize,
     max_depth: usize,
-) -> MoveAndPV<THandler, TPosition, TParams, SIZE>
+) -> MoveAndPV<THandler, TPosition, SIZE>
 where
-    THandler: GameHandler<TPosition, TParams>,
+    THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
     // A node `max_depth` plies ahead of the root is considered a leaf.
@@ -156,7 +156,7 @@ where
 
     if let Some(mv) = move_iter.next() {
         // Statement 6.
-        let (mut m, mut pv) = p_alpha_beta::<THandler, TPosition, TParams, SIZE>(
+        let (mut m, mut pv) = p_alpha_beta::<THandler, TPosition, SIZE>(
             handler,
             pos.play_move(mv),
             depth - 1,
@@ -170,12 +170,12 @@ where
             let next_pos = pos.play_move(mv);
 
             // Statement 9.
-            let (t, mut line) = f_alpha_beta::<THandler, TPosition, TParams, SIZE>(
+            let (t, mut line) = f_alpha_beta::<THandler, TPosition, SIZE>(
                 handler,
                 next_pos,
                 depth - 1,
                 max_depth,
-                -m - <THandler as GameHandler<TPosition, TParams>>::EVAL_EPSILON,
+                -m - <THandler as GameHandler<TPosition>>::EVAL_EPSILON,
                 -m,
             );
             let t = -t;
@@ -183,12 +183,12 @@ where
 
             // Statement 10.
             if t > m {
-                m = -(alpha_beta::<THandler, TPosition, TParams, SIZE>(
+                m = -(alpha_beta::<THandler, TPosition, SIZE>(
                     handler,
                     next_pos,
                     depth - 1,
                     max_depth,
-                    <THandler as GameHandler<TPosition, TParams>>::EVAL_MINIMUM,
+                    <THandler as GameHandler<TPosition>>::EVAL_MINIMUM,
                     -t,
                 )
                 .0);
@@ -203,16 +203,16 @@ where
     }
 }
 
-pub fn f_alpha_beta<THandler, TPosition, TParams, const SIZE: usize>(
+pub fn f_alpha_beta<THandler, TPosition, const SIZE: usize>(
     handler: &THandler,
     pos: TPosition,
     depth: usize,
     max_depth: usize,
-    alpha: <THandler as GameHandler<TPosition, TParams>>::Eval,
-    beta: <THandler as GameHandler<TPosition, TParams>>::Eval,
-) -> MoveAndPV<THandler, TPosition, TParams, SIZE>
+    alpha: <THandler as GameHandler<TPosition>>::Eval,
+    beta: <THandler as GameHandler<TPosition>>::Eval,
+) -> MoveAndPV<THandler, TPosition, SIZE>
 where
-    THandler: GameHandler<TPosition, TParams>,
+    THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
     // A node `max_depth` plies ahead of the root is considered a leaf.
@@ -226,12 +226,12 @@ where
 
     if let Some(mut mv) = move_iter.next() {
         // Statement 6.
-        let mut m = <THandler as GameHandler<TPosition, TParams>>::EVAL_MINIMUM;
+        let mut m = <THandler as GameHandler<TPosition>>::EVAL_MINIMUM;
         let mut pv = [None; SIZE];
 
         loop {
             // Statement 9.
-            let (t, mut line) = f_alpha_beta::<THandler, TPosition, TParams, SIZE>(
+            let (t, mut line) = f_alpha_beta::<THandler, TPosition, SIZE>(
                 handler,
                 pos.play_move(mv),
                 depth - 1,
@@ -267,16 +267,16 @@ where
 }
 
 // Algorithm D.
-pub fn pvs<THandler, TPosition, TParams, const SIZE: usize>(
+pub fn pvs<THandler, TPosition, const SIZE: usize>(
     handler: &THandler,
     pos: TPosition,
     depth: usize,
     max_depth: usize,
-    alpha: <THandler as GameHandler<TPosition, TParams>>::Eval,
-    beta: <THandler as GameHandler<TPosition, TParams>>::Eval,
-) -> MoveAndPV<THandler, TPosition, TParams, SIZE>
+    alpha: <THandler as GameHandler<TPosition>>::Eval,
+    beta: <THandler as GameHandler<TPosition>>::Eval,
+) -> MoveAndPV<THandler, TPosition, SIZE>
 where
-    THandler: GameHandler<TPosition, TParams>,
+    THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
     // A node `max_depth` plies ahead of the root is considered a leaf.
@@ -290,7 +290,7 @@ where
 
     if let Some(mv) = move_iter.next() {
         // Statement 6.
-        let (mut m, mut pv) = pvs::<THandler, TPosition, TParams, SIZE>(
+        let (mut m, mut pv) = pvs::<THandler, TPosition, SIZE>(
             handler,
             pos.play_move(mv),
             depth - 1,
@@ -311,12 +311,12 @@ where
                 let next_pos = pos.play_move(mv);
 
                 // Statement 11.
-                let (t, mut line) = pvs::<THandler, TPosition, TParams, SIZE>(
+                let (t, mut line) = pvs::<THandler, TPosition, SIZE>(
                     handler,
                     next_pos,
                     depth - 1,
                     max_depth,
-                    -bound - <THandler as GameHandler<TPosition, TParams>>::EVAL_EPSILON,
+                    -bound - <THandler as GameHandler<TPosition>>::EVAL_EPSILON,
                     -bound,
                 );
                 let t = -t;
@@ -325,7 +325,7 @@ where
                 // Statement 12.
                 if t > m {
                     // Statement 13.
-                    let (new_m, mut line) = pvs::<THandler, TPosition, TParams, SIZE>(
+                    let (new_m, mut line) = pvs::<THandler, TPosition, SIZE>(
                         handler,
                         next_pos,
                         depth - 1,
@@ -353,14 +353,14 @@ where
 }
 
 // Algorithm E.
-pub fn scout<THandler, TPosition, TParams, const SIZE: usize>(
+pub fn scout<THandler, TPosition, const SIZE: usize>(
     handler: &THandler,
     pos: TPosition,
     depth: usize,
     max_depth: usize,
-) -> MoveAndPV<THandler, TPosition, TParams, SIZE>
+) -> MoveAndPV<THandler, TPosition, SIZE>
 where
-    THandler: GameHandler<TPosition, TParams>,
+    THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
     // A node `max_depth` plies ahead of the root is considered a leaf.
@@ -374,7 +374,7 @@ where
 
     if let Some(mv) = move_iter.next() {
         // Statement 6.
-        let (mut m, mut pv) = scout::<THandler, TPosition, TParams, SIZE>(
+        let (mut m, mut pv) = scout::<THandler, TPosition, SIZE>(
             handler,
             pos.play_move(mv),
             depth - 1,
@@ -391,7 +391,7 @@ where
             let next_pos = pos.play_move(mv);
 
             // Statement 9.
-            if !test::<THandler, TPosition, TParams>(
+            if !test::<THandler, TPosition>(
                 handler,
                 next_pos,
                 depth - 1,
@@ -399,7 +399,7 @@ where
                 -m,
                 !op,
             ) {
-                let (new_m, mut line) = scout::<THandler, TPosition, TParams, SIZE>(
+                let (new_m, mut line) = scout::<THandler, TPosition, SIZE>(
                     handler,
                     next_pos,
                     depth - 1,
@@ -419,16 +419,16 @@ where
     }
 }
 
-pub fn test<THandler, TPosition, TParams>(
+pub fn test<THandler, TPosition>(
     handler: &THandler,
     pos: TPosition,
     depth: usize,
     max_depth: usize,
-    v: <THandler as GameHandler<TPosition, TParams>>::Eval,
+    v: <THandler as GameHandler<TPosition>>::Eval,
     op: bool,
 ) -> bool
 where
-    THandler: GameHandler<TPosition, TParams>,
+    THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
     // A node `max_depth` plies ahead of the root is considered a leaf.
@@ -448,7 +448,7 @@ where
     if let Some(mut mv) = move_iter.next() {
         loop {
             // Statement 11.
-            if !test::<THandler, TPosition, TParams>(
+            if !test::<THandler, TPosition>(
                 handler,
                 pos.play_move(mv),
                 depth - 1,
@@ -562,25 +562,25 @@ where
     }
 }
 
-pub fn sss<THandler, TPosition, TParams>(
+pub fn sss<THandler, TPosition>(
     handler: &THandler,
     root: TPosition,
     depth: usize,
     max_depth: usize,
-) -> <THandler as GameHandler<TPosition, TParams>>::Eval
+) -> <THandler as GameHandler<TPosition>>::Eval
 where
-    THandler: GameHandler<TPosition, TParams>,
+    THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
     let mut parent_map: Vec<(TPosition, TPosition)> = Vec::new();
 
     let mut open: BinaryHeap<
-        State<TPosition, <THandler as GameHandler<TPosition, TParams>>::Eval>,
+        State<TPosition, <THandler as GameHandler<TPosition>>::Eval>,
     > = BinaryHeap::new();
     open.push(State::Live {
         node: root,
         node_type: NodeType::Max,
-        merit: <THandler as GameHandler<TPosition, TParams>>::EVAL_MAXIMUM,
+        merit: <THandler as GameHandler<TPosition>>::EVAL_MAXIMUM,
         depth,
     });
 

@@ -46,8 +46,9 @@ impl Ut3Board {
 
 impl GamePosition for Ut3Board {
     type Move = u64;
+    type Params = ();
 
-    fn startpos() -> Self {
+    fn startpos(_: ()) -> Self {
         Self {
             us: 0u64,
             them: 0u64,
@@ -118,14 +119,15 @@ impl Ut3Handler {
     const LINE: u64 = 0b111;
 }
 
-impl GameHandler<Ut3Board, ()> for Ut3Handler {
+impl GameHandler<Ut3Board> for Ut3Handler {
     type Eval = i32;
+    type Params = ();
 
     const EVAL_MINIMUM: i32 = Self::OUTCOME_LOSS;
     const EVAL_MAXIMUM: i32 = Self::OUTCOME_WIN;
     const EVAL_EPSILON: i32 = 1;
 
-    fn new(_: ()) -> Self {
+    fn new(_: Self::Params) -> Self {
         let mut large_table: Vec<i32> = vec![0; 262144];
         let mut small_table: Vec<i32> = vec![0; 262144];
 

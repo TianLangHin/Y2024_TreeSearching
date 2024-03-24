@@ -17,8 +17,9 @@ pub enum StockmanMove {
 
 impl GamePosition for StockmanPos {
     type Move = StockmanMove;
+    type Params = ();
 
-    fn startpos() -> Self {
+    fn startpos(_: ()) -> Self {
         Self { node: 1 }
     }
 
@@ -34,14 +35,15 @@ impl GamePosition for StockmanPos {
     }
 }
 
-impl GameHandler<StockmanPos, ()> for StockmanHandler {
+impl GameHandler<StockmanPos> for StockmanHandler {
     type Eval = i32;
+    type Params = ();
 
     const EVAL_MINIMUM: i32 = -100;
     const EVAL_MAXIMUM: i32 = 100;
     const EVAL_EPSILON: i32 = 1;
 
-    fn new(_: ()) -> Self {
+    fn new(_: Self::Params) -> Self {
         Self {}
     }
 
