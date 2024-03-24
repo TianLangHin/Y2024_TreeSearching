@@ -4,6 +4,8 @@ use rand::Rng;
 use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaChaRng;
 
+use auto_enums::auto_enum;
+
 use std::collections::BTreeMap;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -78,45 +80,16 @@ impl GameHandler<Uniform2bWidePos> for Uniform2bWideHandler {
         }
     }
 
+    #[auto_enum(Iterator)]
     fn get_legal_moves(
         &self,
         pos: Uniform2bWidePos,
     ) -> impl Iterator<Item = <Uniform2bWidePos as GamePosition>::Move> {
-        enum LegalMoves<T> {
-            NoMoves,
-            HasMoves(T),
-        }
-
-        impl<T> Iterator for LegalMoves<T>
-        where
-            T: Iterator,
-        {
-            type Item = <T as Iterator>::Item;
-
-            #[inline]
-            fn next(&mut self) -> Option<Self::Item> {
-                match self {
-                    Self::NoMoves => None,
-                    Self::HasMoves(x) => x.next(),
-                }
-            }
-
-            #[inline]
-            fn size_hint(&self) -> (usize, Option<usize>) {
-                match self {
-                    Self::NoMoves => (0, Some(0)),
-                    Self::HasMoves(x) => x.size_hint(),
-                }
-            }
-        }
-
         if pos.node >= self.leaf_start {
-            LegalMoves::NoMoves
+            std::iter::empty()
         } else {
-            LegalMoves::HasMoves(
-                std::iter::once(Uniform2bWideMove::Left)
-                    .chain(std::iter::once(Uniform2bWideMove::Right)),
-            )
+            std::iter::once(Uniform2bWideMove::Left)
+                .chain(std::iter::once(Uniform2bWideMove::Right))
         }
     }
 
