@@ -656,9 +656,6 @@ where
                             .nth(1)
                         {
                             l[path_length] = Some(next_move);
-                            for i in path_length+1..SIZE {
-                                l[i] = None;
-                            }
                             // Case 2.
                             open.push(State::Live {
                                 node: parent.play_move(next_move),
