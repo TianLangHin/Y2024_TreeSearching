@@ -463,22 +463,6 @@ where
 }
 
 // Algorithm F.
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum NodeType {
-    Max,
-    Min,
-}
-
-impl NodeType {
-    fn invert(&self) -> Self {
-        match *self {
-            Self::Max => Self::Min,
-            Self::Min => Self::Max,
-        }
-    }
-}
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum State<TPos, TEval, TMove, const SIZE: usize>
 where
@@ -488,18 +472,48 @@ where
 {
     Live {
         node: TPos,
-        node_type: NodeType,
         merit: (TEval, [Option<TMove>; SIZE]),
         depth: usize,
         line: [Option<TMove>; SIZE],
     },
     Solved {
         node: TPos,
-        node_type: NodeType,
         merit: (TEval, [Option<TMove>; SIZE]),
         depth: usize,
         line: [Option<TMove>; SIZE],
     },
+}
+
+impl<TPos, TEval, TMove, const SIZE: usize> State<TPos, TEval, TMove, SIZE>
+where
+    TPos: Clone + Copy + std::fmt::Debug + PartialEq + Eq,
+    TEval: Clone + Copy + std::fmt::Debug + PartialEq + Eq + PartialOrd + Ord,
+    TMove: Clone + Copy + std::fmt::Debug + PartialEq + Eq,
+{
+    fn merit(&self) -> (TEval, [Option<TMove>; SIZE]) {
+        match *self {
+            Self::Solved { node: _, merit, depth: _, line: _ } => merit,
+            Self::Live { node: _, merit, depth: _, line: _ } => merit,
+        }
+    }
+
+    fn depth(&self) -> usize {
+        match *self {
+            Self::Solved { node: _, merit: _, depth, line: _ } => depth,
+            Self::Live { node: _, merit: _, depth, line: _ } => depth,
+        }
+    }
+
+    fn line(&self) -> [Option<TMove>; SIZE] {
+        match *self {
+            Self::Solved { node: _, merit: _, depth: _, line } => line,
+            Self::Live { node: _, merit: _, depth: _, line } => line,
+        }
+    }
+
+    fn is_max_player(&self, max_depth: usize) -> bool {
+        ((max_depth - self.depth()) & 1) == 0
+    }
 }
 
 impl<TPos, TEval, TMove, const SIZE: usize> PartialOrd for State<TPos, TEval, TMove, SIZE>
@@ -520,39 +534,7 @@ where
     TMove: Clone + Copy + std::fmt::Debug + PartialEq + Eq,
 {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        let self_merit = match self {
-            Self::Solved {
-                node: _,
-                node_type: _,
-                merit: (m, _),
-                depth: _,
-                line: _,
-            } => m,
-            Self::Live {
-                node: _,
-                node_type: _,
-                merit: (m, _),
-                depth: _,
-                line: _,
-            } => m,
-        };
-        let other_merit = match other {
-            Self::Solved {
-                node: _,
-                node_type: _,
-                merit: (m, _),
-                depth: _,
-                line: _,
-            } => m,
-            Self::Live {
-                node: _,
-                node_type: _,
-                merit: (m, _),
-                depth: _,
-                line: _,
-            } => m,
-        };
-        self_merit.cmp(other_merit)
+        self.merit().0.cmp(&other.merit().0)
     }
 }
 
@@ -577,7 +559,6 @@ where
 
     open.push(State::Live {
         node: root,
-        node_type: NodeType::Max,
         merit: (
             <THandler as GameHandler<TPosition>>::EVAL_MAXIMUM,
             [None; SIZE],
@@ -590,7 +571,6 @@ where
         match state {
             State::Solved {
                 node: n,
-                node_type: nt,
                 merit: (h, pv),
                 depth: d,
                 line: mut l,
@@ -603,70 +583,49 @@ where
                 for i in 0..path_length {
                     parent = parent.play_move(l[i].unwrap());
                 }
-                match nt {
-                    NodeType::Min => {
-                        // Case 1.
-                        open.retain(|&state| {
-                            (match state {
-                                State::Solved {
-                                    node: _,
-                                    node_type: _,
-                                    merit: _,
-                                    depth: _,
-                                    line,
-                                } => line,
-                                State::Live {
-                                    node: _,
-                                    node_type: _,
-                                    merit: _,
-                                    depth: _,
-                                    line,
-                                } => line,
-                            })
-                            .iter()
-                            .zip(l.iter())
-                            .take(path_length)
-                            .any(|(&best, &discard)| best != discard)
+                if state.is_max_player(max_depth) {
+                    if let Some(next_move) = handler
+                        .get_legal_moves(parent)
+                        .skip_while(|&mv| parent.play_move(mv) != n)
+                        .nth(1)
+                    {
+                        l[path_length] = Some(next_move);
+                        // Case 2.
+                        open.push(State::Live {
+                            node: parent.play_move(next_move),
+                            merit: (h, pv),
+                            depth: d,
+                            line: l,
                         });
+                    } else {
+                        // Case 3.
                         open.push(State::Solved {
                             node: parent,
-                            node_type: nt.invert(),
                             merit: (h, pv),
                             depth: d + 1,
                             line: l,
                         });
                     }
-                    NodeType::Max => {
-                        if let Some(next_move) = handler
-                            .get_legal_moves(parent)
-                            .skip_while(|&mv| parent.play_move(mv) != n)
-                            .nth(1)
-                        {
-                            l[path_length] = Some(next_move);
-                            // Case 2.
-                            open.push(State::Live {
-                                node: parent.play_move(next_move),
-                                node_type: nt,
-                                merit: (h, pv),
-                                depth: d,
-                                line: l,
-                            });
-                        } else {
-                            // Case 3.
-                            open.push(State::Solved {
-                                node: parent,
-                                node_type: nt.invert(),
-                                merit: (h, pv),
-                                depth: d + 1,
-                                line: l,
-                            });
-                        }
-                    }
+                } else {
+                    // Case 1.
+                    open.retain(|&state| {
+                        state
+                        .line()
+                        .iter()
+                        .zip(l.iter())
+                        .take(path_length)
+                        .any(|(&best, &discard)| best != discard)
+                    });
+                    open.push(State::Solved {
+                        node: parent,
+                        merit: (h, pv),
+                        depth: d + 1,
+                        line: l,
+                    });
                 }
             }
             State::Live {
                 node: n,
-                node_type: nt,
                 merit: (h, pv),
                 depth: d,
                 line: l,
@@ -677,7 +636,6 @@ where
                     // Extension of Case 4. `max_depth` plies from root is considered leaf.
                     open.push(State::Solved {
                         node: n,
-                        node_type: nt,
                         merit: if h < eval { (h, pv) } else { (eval, l) },
                         depth: d,
                         line: l,
@@ -685,44 +643,37 @@ where
                 } else if let Some(first_move) = legal_moves.next() {
                     let mut line = l;
                     line[max_depth - d] = Some(first_move);
-                    match nt {
-                        NodeType::Min => {
-                            // Case 5.
+                    if state.is_max_player(max_depth) {
+                        // Case 6.
+                        open.push(State::Live {
+                            node: n.play_move(first_move),
+                            merit: (h, pv),
+                            depth: d - 1,
+                            line,
+                        });
+                        for mv in legal_moves {
+                            line[max_depth - d] = Some(mv);
                             open.push(State::Live {
-                                node: n.play_move(first_move),
-                                node_type: nt.invert(),
+                                node: n.play_move(mv),
                                 merit: (h, pv),
                                 depth: d - 1,
                                 line,
                             });
                         }
-                        NodeType::Max => {
-                            // Case 6.
-                            open.push(State::Live {
-                                node: n.play_move(first_move),
-                                node_type: nt.invert(),
-                                merit: (h, pv),
-                                depth: d - 1,
-                                line,
-                            });
-                            for mv in legal_moves {
-                                line[max_depth - d] = Some(mv);
-                                open.push(State::Live {
-                                    node: n.play_move(mv),
-                                    node_type: nt.invert(),
-                                    merit: (h, pv),
-                                    depth: d - 1,
-                                    line,
-                                });
-                            }
-                        }
+                    } else {
+                        // Case 5.
+                        open.push(State::Live {
+                            node: n.play_move(first_move),
+                            merit: (h, pv),
+                            depth: d - 1,
+                            line,
+                        });
                     }
                 } else {
                     let eval = handler.evaluate(n, depth, max_depth);
                     // Next legal move is `None` on first attempt: leaf node. Thus, Case 4.
                     open.push(State::Solved {
                         node: n,
-                        node_type: nt,
                         merit: if h < eval { (h, pv) } else { (eval, l) },
                         depth: d,
                         line: l,
