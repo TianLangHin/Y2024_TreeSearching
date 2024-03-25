@@ -580,8 +580,8 @@ where
                 }
                 let mut parent = root;
                 let path_length = max_depth - d - 1;
-                for i in 0..path_length {
-                    parent = parent.play_move(l[i].unwrap());
+                for mv in l.iter().take(path_length) {
+                    parent = parent.play_move(mv.unwrap());
                 }
                 if state.is_max_player(max_depth) {
                     if let Some(next_move) = handler
