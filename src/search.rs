@@ -115,7 +115,6 @@ where
                 pv = line;
             }
 
-
             // Statement 10.
             if m >= beta {
                 return (m, line);
@@ -184,7 +183,7 @@ where
 
             // Statement 10.
             if t > m {
-                let (t, mut line) = alpha_beta::<THandler, TPosition, SIZE>(
+                let (t, line) = alpha_beta::<THandler, TPosition, SIZE>(
                     handler,
                     next_pos,
                     depth - 1,
@@ -196,7 +195,7 @@ where
                 // Push beta up by EVAL_EPSILON so that PV is preserved instead of beta-cutoff.
                 // Fill in the PV with the shifted partial line returned from shallow alpha_beta call.
                 pv[max_depth - depth] = Some(mv);
-                for (i, &line_element) in (max_depth - depth + 1 .. SIZE).zip(line.iter()) {
+                for (i, &line_element) in (max_depth - depth + 1..SIZE).zip(line.iter()) {
                     pv[i] = line_element;
                 }
             }
@@ -245,7 +244,7 @@ where
                     max_depth,
                     -beta,
                     -std::cmp::max(m, alpha),
-                )
+                ),
             );
 
             // Statement 10.
@@ -493,22 +492,52 @@ where
 {
     fn merit(&self) -> (TEval, [Option<TMove>; SIZE]) {
         match *self {
-            Self::Solved { node: _, merit, depth: _, line: _ } => merit,
-            Self::Live { node: _, merit, depth: _, line: _ } => merit,
+            Self::Solved {
+                node: _,
+                merit,
+                depth: _,
+                line: _,
+            } => merit,
+            Self::Live {
+                node: _,
+                merit,
+                depth: _,
+                line: _,
+            } => merit,
         }
     }
 
     fn depth(&self) -> usize {
         match *self {
-            Self::Solved { node: _, merit: _, depth, line: _ } => depth,
-            Self::Live { node: _, merit: _, depth, line: _ } => depth,
+            Self::Solved {
+                node: _,
+                merit: _,
+                depth,
+                line: _,
+            } => depth,
+            Self::Live {
+                node: _,
+                merit: _,
+                depth,
+                line: _,
+            } => depth,
         }
     }
 
     fn line(&self) -> [Option<TMove>; SIZE] {
         match *self {
-            Self::Solved { node: _, merit: _, depth: _, line } => line,
-            Self::Live { node: _, merit: _, depth: _, line } => line,
+            Self::Solved {
+                node: _,
+                merit: _,
+                depth: _,
+                line,
+            } => line,
+            Self::Live {
+                node: _,
+                merit: _,
+                depth: _,
+                line,
+            } => line,
         }
     }
 
@@ -611,11 +640,11 @@ where
                     // Case 1.
                     open.retain(|&state| {
                         state
-                        .line()
-                        .iter()
-                        .zip(l.iter())
-                        .take(path_length)
-                        .any(|(&best, &discard)| best != discard)
+                            .line()
+                            .iter()
+                            .zip(l.iter())
+                            .take(path_length)
+                            .any(|(&best, &discard)| best != discard)
                     });
                     open.push(State::Solved {
                         node: parent,
