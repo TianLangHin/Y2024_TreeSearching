@@ -115,6 +115,7 @@ where
                 pv = line;
             }
 
+
             // Statement 10.
             if m >= beta {
                 return (m, line);
@@ -165,12 +166,14 @@ where
         m = -m;
         pv[max_depth - depth] = Some(mv);
 
+        let mut t: <THandler as GameHandler<TPosition>>::Eval;
+
         // Statement 7.
         for mv in move_iter {
             let next_pos = pos.play_move(mv);
 
             // Statement 9.
-            let (t, mut line) = f_alpha_beta::<THandler, TPosition, SIZE>(
+            t = -f_alpha_beta::<THandler, TPosition, SIZE>(
                 handler,
                 next_pos,
                 depth - 1,
@@ -178,21 +181,24 @@ where
                 -m - <THandler as GameHandler<TPosition>>::EVAL_EPSILON,
                 -m,
             );
-            let t = -t;
-            line[max_depth - depth] = Some(mv);
 
             // Statement 10.
             if t > m {
-                m = -(alpha_beta::<THandler, TPosition, SIZE>(
+                let (t, mut line) = alpha_beta::<THandler, TPosition, SIZE>(
                     handler,
                     next_pos,
                     depth - 1,
-                    max_depth,
+                    depth - 1,
                     <THandler as GameHandler<TPosition>>::EVAL_MINIMUM,
-                    -t,
-                )
-                .0);
-                pv = line;
+                    -t + <THandler as GameHandler<TPosition>>::EVAL_EPSILON,
+                );
+                m = -t;
+                // Push beta up by EVAL_EPSILON so that PV is preserved instead of beta-cutoff.
+                // Fill in the PV with the shifted partial line returned from shallow alpha_beta call.
+                pv[max_depth - depth] = Some(mv);
+                for (i, &line_element) in (max_depth - depth + 1 .. SIZE).zip(line.iter()) {
+                    pv[i] = line_element;
+                }
             }
         }
 
@@ -210,7 +216,7 @@ pub fn f_alpha_beta<THandler, TPosition, const SIZE: usize>(
     max_depth: usize,
     alpha: <THandler as GameHandler<TPosition>>::Eval,
     beta: <THandler as GameHandler<TPosition>>::Eval,
-) -> MoveAndPV<THandler, TPosition, SIZE>
+) -> <THandler as GameHandler<TPosition>>::Eval
 where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
@@ -218,7 +224,7 @@ where
     // A node `max_depth` plies ahead of the root is considered a leaf.
     // Statement 5.
     if depth == 0 {
-        return (handler.evaluate(pos, depth, max_depth), [None; SIZE]);
+        return handler.evaluate(pos, depth, max_depth);
     }
 
     // Statement 4.
@@ -227,29 +233,24 @@ where
     if let Some(mut mv) = move_iter.next() {
         // Statement 6.
         let mut m = <THandler as GameHandler<TPosition>>::EVAL_MINIMUM;
-        let mut pv = [None; SIZE];
 
         loop {
             // Statement 9.
-            let (t, mut line) = f_alpha_beta::<THandler, TPosition, SIZE>(
-                handler,
-                pos.play_move(mv),
-                depth - 1,
-                max_depth,
-                -beta,
-                -std::cmp::max(m, alpha),
+            m = std::cmp::max(
+                m,
+                -f_alpha_beta::<THandler, TPosition, SIZE>(
+                    handler,
+                    pos.play_move(mv),
+                    depth - 1,
+                    max_depth,
+                    -beta,
+                    -std::cmp::max(m, alpha),
+                )
             );
-            let t = -t;
-            line[max_depth - depth] = Some(mv);
-
-            if t > m {
-                m = t;
-                pv = line;
-            }
 
             // Statement 10.
             if m >= beta {
-                return (m, line);
+                return m;
             }
 
             if let Some(new_mv) = move_iter.next() {
@@ -259,10 +260,10 @@ where
             }
         }
 
-        (m, pv)
+        m
     } else {
         // Statement 5.
-        (handler.evaluate(pos, depth, max_depth), [None; SIZE])
+        handler.evaluate(pos, depth, max_depth)
     }
 }
 
