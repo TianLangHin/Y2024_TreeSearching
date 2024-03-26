@@ -1,4 +1,5 @@
 use crate::games::chess::*;
+use crate::games::hypothetical_tree::*;
 use crate::games::stockman::*;
 use crate::games::uniform_2b_wide::*;
 use crate::games::ut3::*;
@@ -133,6 +134,7 @@ fn perft_div_main_par(depth: usize, pos: ChessPos, handler: &ChessHandler) {
 }
 
 fn main() {
+
     test_stockman_tree();
 
     println!("Stockman");
@@ -306,23 +308,23 @@ fn main() {
     const DEPTH: usize = 16;
     let unif_2b_wide_handler = Uniform2bWideHandler::new(Uniform2bWideParams {
         depth: DEPTH as u32,
-        seed: 314159,
+        seed: 31415,
     });
     println!("branch_and_bound");
     let s = Instant::now();
-    let eval = branch_and_bound::<Uniform2bWideHandler, Uniform2bWidePos, DEPTH>(
+    let eval_and_pv = branch_and_bound::<Uniform2bWideHandler, Uniform2bWidePos, DEPTH>(
         &unif_2b_wide_handler,
         Uniform2bWidePos::startpos(()),
         DEPTH,
         DEPTH,
         Uniform2bWideHandler::EVAL_MAXIMUM,
     );
-    println!("Unif2bWide: {:?}", eval);
+    println!("Unif2bWide: {:?}", eval_and_pv);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
     println!("alpha_beta");
     let s = Instant::now();
-    let eval = alpha_beta::<Uniform2bWideHandler, Uniform2bWidePos, DEPTH>(
+    let eval_and_pv = alpha_beta::<Uniform2bWideHandler, Uniform2bWidePos, DEPTH>(
         &unif_2b_wide_handler,
         Uniform2bWidePos::startpos(()),
         DEPTH,
@@ -330,23 +332,23 @@ fn main() {
         Uniform2bWideHandler::EVAL_MINIMUM,
         Uniform2bWideHandler::EVAL_MAXIMUM,
     );
-    println!("Unif2bWide: {:?}", eval);
+    println!("Unif2bWide: {:?}", eval_and_pv);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
     println!("p_alpha_beta");
     let s = Instant::now();
-    let eval = p_alpha_beta::<Uniform2bWideHandler, Uniform2bWidePos, DEPTH>(
+    let eval_and_pv = p_alpha_beta::<Uniform2bWideHandler, Uniform2bWidePos, DEPTH>(
         &unif_2b_wide_handler,
         Uniform2bWidePos::startpos(()),
         DEPTH,
         DEPTH,
     );
-    println!("Unif2bWide: {:?}", eval);
+    println!("Unif2bWide: {:?}", eval_and_pv);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
     println!("pvs");
     let s = Instant::now();
-    let eval = pvs::<Uniform2bWideHandler, Uniform2bWidePos, DEPTH>(
+    let eval_and_pv = pvs::<Uniform2bWideHandler, Uniform2bWidePos, DEPTH>(
         &unif_2b_wide_handler,
         Uniform2bWidePos::startpos(()),
         DEPTH,
@@ -354,28 +356,108 @@ fn main() {
         Uniform2bWideHandler::EVAL_MINIMUM,
         Uniform2bWideHandler::EVAL_MAXIMUM,
     );
-    println!("Unif2bWide: {:?}", eval);
+    println!("Unif2bWide: {:?}", eval_and_pv);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
     println!("scout");
     let s = Instant::now();
-    let eval = scout::<Uniform2bWideHandler, Uniform2bWidePos, DEPTH>(
+    let eval_and_pv = scout::<Uniform2bWideHandler, Uniform2bWidePos, DEPTH>(
         &unif_2b_wide_handler,
         Uniform2bWidePos::startpos(()),
         DEPTH,
         DEPTH,
     );
-    println!("Unif2bWide: {:?}", eval);
+    println!("Unif2bWide: {:?}", eval_and_pv);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 
     println!("state space search");
     let s = Instant::now();
-    let eval = sss::<Uniform2bWideHandler, Uniform2bWidePos, DEPTH>(
+    let eval_and_pv = sss::<Uniform2bWideHandler, Uniform2bWidePos, DEPTH>(
         &unif_2b_wide_handler,
         Uniform2bWidePos::startpos(()),
         DEPTH,
         DEPTH,
     );
-    println!("Unif2bWide: {:?}", eval);
+    println!("Unif2bWide: {:?}", eval_and_pv);
+    println!("Time elapsed: {} ms", s.elapsed().as_millis());
+
+    const HYP_TREE_DEPTH: usize = 5;
+    const HYP_TREE_WIDTH: usize = 5;
+    let unord_ind_handler = UnordIndHypTreeHandler::new(HypTreeParams {
+        depth: HYP_TREE_DEPTH,
+        width: HYP_TREE_WIDTH,
+        seed: 19937
+    });
+    let unord_ind_startpos = HypTreePos::startpos(HYP_TREE_WIDTH);
+
+    println!("branch_and_bound");
+    let s = Instant::now();
+    let eval_and_pv = branch_and_bound::<UnordIndHypTreeHandler, HypTreePos, HYP_TREE_DEPTH>(
+        &unord_ind_handler,
+        unord_ind_startpos,
+        HYP_TREE_DEPTH,
+        HYP_TREE_DEPTH,
+        UnordIndHypTreeHandler::EVAL_MAXIMUM,
+    );
+    println!("UnordIndHyp: {:?}", eval_and_pv);
+    println!("Time elapsed: {} ms", s.elapsed().as_millis());
+
+    println!("alpha_beta");
+    let s = Instant::now();
+    let eval_and_pv = alpha_beta::<UnordIndHypTreeHandler, HypTreePos, HYP_TREE_DEPTH>(
+        &unord_ind_handler,
+        unord_ind_startpos,
+        HYP_TREE_DEPTH,
+        HYP_TREE_DEPTH,
+        UnordIndHypTreeHandler::EVAL_MINIMUM,
+        UnordIndHypTreeHandler::EVAL_MAXIMUM,
+    );
+    println!("UnordIndHyp: {:?}", eval_and_pv);
+    println!("Time elapsed: {} ms", s.elapsed().as_millis());
+
+    println!("p_alpha_beta");
+    let s = Instant::now();
+    let eval_and_pv = p_alpha_beta::<UnordIndHypTreeHandler, HypTreePos, HYP_TREE_DEPTH>(
+        &unord_ind_handler,
+        unord_ind_startpos,
+        HYP_TREE_DEPTH,
+        HYP_TREE_DEPTH,
+    );
+    println!("UnordIndHyp: {:?}", eval_and_pv);
+    println!("Time elapsed: {} ms", s.elapsed().as_millis());
+
+    println!("pvs");
+    let s = Instant::now();
+    let eval_and_pv = pvs::<UnordIndHypTreeHandler, HypTreePos, HYP_TREE_DEPTH>(
+        &unord_ind_handler,
+        unord_ind_startpos,
+        HYP_TREE_DEPTH,
+        HYP_TREE_DEPTH,
+        UnordIndHypTreeHandler::EVAL_MINIMUM,
+        UnordIndHypTreeHandler::EVAL_MAXIMUM,
+    );
+    println!("UnordIndHyp: {:?}", eval_and_pv);
+    println!("Time elapsed: {} ms", s.elapsed().as_millis());
+
+    println!("scout");
+    let s = Instant::now();
+    let eval_and_pv = scout::<UnordIndHypTreeHandler, HypTreePos, HYP_TREE_DEPTH>(
+        &unord_ind_handler,
+        unord_ind_startpos,
+        HYP_TREE_DEPTH,
+        HYP_TREE_DEPTH,
+    );
+    println!("UnordIndHyp: {:?}", eval_and_pv);
+    println!("Time elapsed: {} ms", s.elapsed().as_millis());
+
+    println!("state space search");
+    let s = Instant::now();
+    let eval_and_pv = sss::<UnordIndHypTreeHandler, HypTreePos, HYP_TREE_DEPTH>(
+        &unord_ind_handler,
+        unord_ind_startpos,
+        HYP_TREE_DEPTH,
+        HYP_TREE_DEPTH,
+    );
+    println!("UnordIndHyp: {:?}", eval_and_pv);
     println!("Time elapsed: {} ms", s.elapsed().as_millis());
 }
