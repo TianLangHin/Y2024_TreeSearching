@@ -172,7 +172,7 @@ where
             let next_pos = pos.play_move(mv);
 
             // Statement 9.
-            t = -f_alpha_beta::<THandler, TPosition, SIZE>(
+            t = -f_alpha_beta::<THandler, TPosition>(
                 handler,
                 next_pos,
                 depth - 1,
@@ -189,10 +189,11 @@ where
                     depth - 1,
                     depth - 1,
                     <THandler as GameHandler<TPosition>>::EVAL_MINIMUM,
-                    -t + <THandler as GameHandler<TPosition>>::EVAL_EPSILON,
+                    <THandler as GameHandler<TPosition>>::EVAL_MAXIMUM,
                 );
                 m = -t;
-                // Push beta up by EVAL_EPSILON so that PV is preserved instead of beta-cutoff.
+                // Use alpha-beta with maximal window to retain PV without premature beta cutoffs.
+                // `-t` can be used in place of `EVAL_MAXIMUM` if PV does not need to be preserved.
                 // Fill in the PV with the shifted partial line returned from shallow alpha_beta call.
                 pv[max_depth - depth] = Some(mv);
                 for (i, &line_element) in (max_depth - depth + 1..SIZE).zip(line.iter()) {
@@ -208,7 +209,7 @@ where
     }
 }
 
-pub fn f_alpha_beta<THandler, TPosition, const SIZE: usize>(
+pub fn f_alpha_beta<THandler, TPosition>(
     handler: &THandler,
     pos: TPosition,
     depth: usize,
@@ -237,7 +238,7 @@ where
             // Statement 9.
             m = std::cmp::max(
                 m,
-                -f_alpha_beta::<THandler, TPosition, SIZE>(
+                -f_alpha_beta::<THandler, TPosition>(
                     handler,
                     pos.play_move(mv),
                     depth - 1,
@@ -662,7 +663,12 @@ where
             } => {
                 let mut legal_moves = handler.get_legal_moves(n);
                 if d == 0 {
-                    let eval = handler.evaluate(n, depth, max_depth);
+                    // To account for the negamax construct in conjunction with SSS* node evaluation.
+                    let eval = if ((max_depth - depth) & 1) == 0 {
+                        handler.evaluate(n, depth, max_depth)
+                    } else {
+                        -handler.evaluate(n, depth, max_depth)
+                    };
                     // Extension of Case 4. `max_depth` plies from root is considered leaf.
                     open.push(State::Solved {
                         node: n,
@@ -700,7 +706,12 @@ where
                         });
                     }
                 } else {
-                    let eval = handler.evaluate(n, depth, max_depth);
+                    // To account for the negamax construct in conjunction with SSS* node evaluation.
+                    let eval = if ((max_depth - depth) & 1) == 0 {
+                        handler.evaluate(n, depth, max_depth)
+                    } else {
+                        -handler.evaluate(n, depth, max_depth)
+                    };
                     // Next legal move is `None` on first attempt: leaf node. Thus, Case 4.
                     open.push(State::Solved {
                         node: n,
@@ -711,6 +722,7 @@ where
                 }
             }
         }
+        // println!("{:?}", &open);
     }
     panic!("State space operator is faulty");
 }
