@@ -26,3 +26,4 @@ Currently, the following game trees are implemented in `src/games`.
 * A representation of Ultimate Tic-Tac-Toe using bitboards, defined in `ut3.rs`.
 * A representation of Chess using bitboards (particularly magic lookups), defined in `chess.rs`.
 * A representation of a uniform game tree of constant branching factor 2, and has randomly assigned node values based on the `rand_chacha` crate, defined in `uniform_2b_wide.rs`.
+* A representation of a uniform game tree with node values assigned by the `unordered-independent` scheme as used in Muszycka and Shinghal (1985), using the `rand_chacha` crate in conjunction with the Fisher-Yates Shuffle, defined in `hypothetical_tree.rs`.
