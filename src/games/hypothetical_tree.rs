@@ -6,8 +6,6 @@ use rand_chacha::ChaChaRng;
 
 use auto_enums::auto_enum;
 
-use std::collections::BTreeMap;
-
 // A representation of a node in a hypothetical game tree,
 // which can have constant or non-constant fanout at each node.
 // The only restrictions are that, if there is a known upper bound to fanout,
@@ -33,7 +31,7 @@ impl GamePosition for HypTreePos {
 
     fn play_move(&self, mv: Self::Move) -> Self {
         let (fanout, shift) = mv;
-        Self { fanout: self.fanout, node: self.node * self.fanout + shift }
+        Self { fanout, node: self.node * self.fanout + shift }
     }
 }
 
