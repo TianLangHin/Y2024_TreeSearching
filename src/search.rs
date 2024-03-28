@@ -191,13 +191,17 @@ where
                     <THandler as GameHandler<TPosition>>::EVAL_MINIMUM,
                     <THandler as GameHandler<TPosition>>::EVAL_MAXIMUM,
                 );
-                m = -t;
-                // Use alpha-beta with maximal window to retain PV without premature beta cutoffs.
-                // `-t` can be used in place of `EVAL_MAXIMUM` if PV does not need to be preserved.
-                // Fill in the PV with the shifted partial line returned from shallow alpha_beta call.
-                pv[max_depth - depth] = Some(mv);
-                for (i, &line_element) in (max_depth - depth + 1..SIZE).zip(line.iter()) {
-                    pv[i] = line_element;
+                let t = -t;
+                if t > m {
+                    m = t;
+                    // Use alpha-beta with maximal window to retain PV without premature beta cutoffs.
+                    // `-t` can be used in place of `EVAL_MAXIMUM` if PV does not need to be preserved.
+                    // Time consumption increases due to the requirement of preserving PV.
+                    // Fill in the PV with the shifted partial line returned from shallow alpha_beta call.
+                    pv[max_depth - depth] = Some(mv);
+                    for (i, &line_element) in (max_depth - depth + 1..SIZE).zip(line.iter()) {
+                        pv[i] = line_element;
+                    }
                 }
             }
         }
@@ -332,8 +336,12 @@ where
                         depth - 1,
                         max_depth,
                         -beta,
-                        -t,
+                        <THandler as GameHandler<TPosition>>::EVAL_MAXIMUM,
                     );
+                    // Use pvs with maximal window to retain PV without premature beta cutoffs.
+                    // `-t` can be used in place of `EVAL_MAXIMUM` if PV does not need to be preserved.
+                    // Time consumption increases due to the requirement of preserving PV.
+                    // Fill in the PV with the shifted partial line returned from shallow alpha_beta call.
                     let new_m = -new_m;
                     line[max_depth - depth] = Some(mv);
                     m = new_m;
