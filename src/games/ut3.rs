@@ -12,7 +12,6 @@ pub struct Ut3Board {
 pub struct Ut3Handler {
     large_table: Vec<i32>,
     small_table: Vec<i32>,
-    leaf_count: u128,
 }
 
 impl Ut3Board {
@@ -206,7 +205,6 @@ impl GameHandler<Ut3Board> for Ut3Handler {
         Self {
             large_table,
             small_table,
-            leaf_count: 0,
         }
     }
 
@@ -275,17 +273,5 @@ impl GameHandler<Ut3Board> for Ut3Handler {
                 }
             }))
             .fold(eval, |acc, x| acc + x)
-    }
-
-    fn increment_leaf_count(&mut self) {
-        self.leaf_count += 1;
-    }
-
-    fn get_leaf_count(&self) -> u128 {
-        self.leaf_count
-    }
-
-    fn reset_leaf_count(&mut self) {
-        self.leaf_count = 0;
     }
 }

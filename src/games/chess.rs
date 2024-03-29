@@ -25,7 +25,6 @@ struct SMagic {
 pub struct ChessHandler {
     bishop_magics: [SMagic; 64],
     rook_magics: [SMagic; 64],
-    leaf_count: u128,
 }
 
 const KINGSIDE_CASTLE_CLEARANCE_MASK: u64 = 0x60;
@@ -1221,7 +1220,6 @@ impl GameHandler<ChessPos> for ChessHandler {
         Self {
             bishop_magics: bishop_table,
             rook_magics: rook_table,
-            leaf_count: 0,
         }
     }
 
@@ -1367,17 +1365,5 @@ impl GameHandler<ChessPos> for ChessHandler {
 
     fn evaluate(&self, _pos: ChessPos, _depth: usize, _max_depth: usize) -> Self::Eval {
         todo!();
-    }
-
-    fn increment_leaf_count(&mut self) {
-        self.leaf_count += 1;
-    }
-
-    fn get_leaf_count(&self) -> u128 {
-        self.leaf_count
-    }
-
-    fn reset_leaf_count(&mut self) {
-        self.leaf_count = 0;
     }
 }

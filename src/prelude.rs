@@ -33,8 +33,4 @@ where
         pos: TPosition,
     ) -> impl Iterator<Item = <TPosition as GamePosition>::Move>;
     fn evaluate(&self, pos: TPosition, depth: usize, max_depth: usize) -> Self::Eval;
-
-    fn increment_leaf_count(&mut self);
-    fn get_leaf_count(&self) -> u128;
-    fn reset_leaf_count(&mut self);
 }

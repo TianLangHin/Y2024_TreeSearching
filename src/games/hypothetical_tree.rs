@@ -44,7 +44,6 @@ pub struct UnordIndHypTreeHandler {
     // The `leaf_start` variable is an exclusive lower bound for leaf nodes.
     leaf_start: usize,
     node_values: Vec<i64>,
-    leaf_count: u128,
 }
 
 pub struct HypTreeParams {
@@ -83,7 +82,6 @@ impl GameHandler<HypTreePos> for UnordIndHypTreeHandler {
             width,
             leaf_start,
             node_values,
-            leaf_count: 0,
         }
     }
 
@@ -111,17 +109,5 @@ impl GameHandler<HypTreePos> for UnordIndHypTreeHandler {
             // `evaluate` should not be called on non-leaf nodes.
             0
         }
-    }
-
-    fn increment_leaf_count(&mut self) {
-        self.leaf_count += 1;
-    }
-
-    fn get_leaf_count(&self) -> u128 {
-        self.leaf_count
-    }
-
-    fn reset_leaf_count(&mut self) {
-        self.leaf_count = 0;
     }
 }
