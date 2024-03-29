@@ -7,7 +7,9 @@ pub struct StockmanPos {
     pub node: usize,
 }
 
-pub struct StockmanHandler {}
+pub struct StockmanHandler {
+    leaf_count: u128,
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StockmanMove {
@@ -44,7 +46,7 @@ impl GameHandler<StockmanPos> for StockmanHandler {
     const EVAL_EPSILON: i32 = 1;
 
     fn new(_: Self::Params) -> Self {
-        Self {}
+        Self { leaf_count: 0 }
     }
 
     #[auto_enum(Iterator)]
@@ -80,5 +82,17 @@ impl GameHandler<StockmanPos> for StockmanHandler {
             31 => 80,
             _ => i32::MAX,
         }
+    }
+
+    fn increment_leaf_count(&mut self) {
+        self.leaf_count += 1;
+    }
+
+    fn get_leaf_count(&self) -> u128 {
+        self.leaf_count
+    }
+
+    fn reset_leaf_count(&mut self) {
+        self.leaf_count = 0;
     }
 }

@@ -42,6 +42,7 @@ impl GamePosition for Uniform2bWidePos {
 pub struct Uniform2bWideHandler {
     leaf_start: u32,
     node_values: BTreeMap<u32, i32>,
+    leaf_count: u128,
 }
 
 pub struct Uniform2bWideParams {
@@ -74,6 +75,7 @@ impl GameHandler<Uniform2bWidePos> for Uniform2bWideHandler {
         Self {
             leaf_start: 1 << depth,
             node_values,
+            leaf_count: 0,
         }
     }
 
@@ -95,5 +97,17 @@ impl GameHandler<Uniform2bWidePos> for Uniform2bWideHandler {
             Some(&n) => n,
             None => i32::MAX,
         }
+    }
+
+    fn increment_leaf_count(&mut self) {
+        self.leaf_count += 1;
+    }
+
+    fn get_leaf_count(&self) -> u128 {
+        self.leaf_count
+    }
+
+    fn reset_leaf_count(&mut self) {
+        self.leaf_count = 0;
     }
 }
