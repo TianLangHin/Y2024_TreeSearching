@@ -21,7 +21,7 @@ pub struct HypTreePos {
 impl GamePosition for HypTreePos {
     // A `Move` contains two pieces of information:
     // The number of places to the right to shift from the left-most child, and
-    // The fanout of the child node created in this move. 
+    // The fanout of the child node created in this move.
     type Move = (usize, usize);
     type Params = usize;
 
@@ -31,7 +31,10 @@ impl GamePosition for HypTreePos {
 
     fn play_move(&self, mv: Self::Move) -> Self {
         let (fanout, shift) = mv;
-        Self { fanout, node: self.node * self.fanout + shift }
+        Self {
+            fanout,
+            node: self.node * self.fanout + shift,
+        }
     }
 }
 
@@ -75,11 +78,18 @@ impl GameHandler<HypTreePos> for UnordIndHypTreeHandler {
             let j = rng.gen_range(0..=i);
             (node_values[i], node_values[j]) = (node_values[j], node_values[i]);
         }
-        Self { width, leaf_start, node_values }
+        Self {
+            width,
+            leaf_start,
+            node_values,
+        }
     }
 
     #[auto_enum(Iterator)]
-    fn get_legal_moves(&self, pos: HypTreePos) -> impl Iterator<Item = <HypTreePos as GamePosition>::Move> {
+    fn get_legal_moves(
+        &self,
+        pos: HypTreePos,
+    ) -> impl Iterator<Item = <HypTreePos as GamePosition>::Move> {
         if pos.node > self.leaf_start {
             std::iter::empty()
         } else {
@@ -89,7 +99,11 @@ impl GameHandler<HypTreePos> for UnordIndHypTreeHandler {
 
     fn evaluate(&self, pos: HypTreePos, depth: usize, max_depth: usize) -> Self::Eval {
         if pos.node > self.leaf_start {
-            let toggle = if ((max_depth - depth) & 1) == 0 { 1 } else { -1 };
+            let toggle = if ((max_depth - depth) & 1) == 0 {
+                1
+            } else {
+                -1
+            };
             self.node_values[pos.node - self.leaf_start - 1] * toggle
         } else {
             // `evaluate` should not be called on non-leaf nodes.
