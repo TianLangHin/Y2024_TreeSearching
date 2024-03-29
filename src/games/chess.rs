@@ -864,6 +864,52 @@ impl SMagic {
 }
 
 impl ChessHandler {
+    pub fn square_to_string(&self, sq: u64) -> String {
+        let f = ["a", "b", "c", "d", "e", "f", "g", "h"];
+        let r = ["1", "2", "3", "4", "5", "6", "7", "8"];
+        format!("{}{}", f[(sq & 7) as usize], r[((sq >> 3) & 7) as usize])
+    }
+
+    pub fn move_string(&self, mv: u64, side: u64) -> String {
+        let o = if side == 1 {
+            flip_square(mv & 0x3f)
+        } else {
+            mv & 0x3f
+        };
+        let d = if side == 1 {
+            flip_square((mv >> 6) & 0x3f)
+        } else {
+            (mv >> 6) & 0x3f
+        };
+        let f = (mv >> 12) & 0x3;
+        let p = (mv >> 14) & 0x3;
+
+        match f {
+            0 => format!("{}{}", self.square_to_string(o), self.square_to_string(d)),
+            1 => {
+                format!(
+                    "{}{}{}",
+                    self.square_to_string(o),
+                    self.square_to_string(d),
+                    if p == 0 {
+                        "q"
+                    } else if p == 1 {
+                        "r"
+                    } else if p == 2 {
+                        "b"
+                    } else if p == 3 {
+                        "n"
+                    } else {
+                        panic!("promote flag invalid")
+                    }
+                )
+            }
+            2 => (if d == 2 { "e1c1" } else { "e1g1" }).to_string(),
+            3 => format!("{}{}ep", self.square_to_string(o), self.square_to_string(d)),
+            _ => panic!("move flag invalid: {}", f),
+        }
+    }
+
     fn bishop_unblocked_attack_rays(square: u64) -> u64 {
         let rank = square >> 3;
         let file = square & 7;
