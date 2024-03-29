@@ -245,13 +245,7 @@ where
 {
     move_list
         .iter()
-        .map_while(|mv| {
-            if let Some(m) = mv {
-                Some(format!("{:?}", m))
-            } else {
-                None
-            }
-        })
+        .map_while(|mv| mv.as_ref().map(|m| format!("{:?}", m)))
         .collect::<Vec<String>>()
         .join(", ")
 }
