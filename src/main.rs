@@ -247,9 +247,9 @@ where
         let result: MoveAndPV<THandler, TPosition, DEPTH> = algorithms.N(&handler, startpos);
         println!("Time elapsed: {} ms", s.elapsed().as_millis().to_string().bright_yellow());
         if eval_from_line(&handler, startpos, result.1) == result.0 {
-            println!("{}", "Line and eval MATCH".bright_green());
+            println!("Line and eval {}", "MATCH".bright_green());
         } else {
-            println!("{}", "Line and eval MISMATCH".bright_red());
+            println!("Line and eval {}", "MISMATCH".bright_red());
         }
     });
 }
@@ -274,4 +274,6 @@ fn main() {
         },
         8,
     );
+
+
 }
