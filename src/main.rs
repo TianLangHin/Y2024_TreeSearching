@@ -152,6 +152,7 @@ where
 }
 
 fn root_call_bb<THandler, TPosition, const DEPTH: usize>(
+    searcher: &mut Searcher,
     handler: &THandler,
     root: TPosition,
 ) -> MoveAndPV<THandler, TPosition, DEPTH>
@@ -159,7 +160,7 @@ where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
-    branch_and_bound(
+    searcher.branch_and_bound(
         handler,
         root,
         DEPTH,
@@ -169,6 +170,7 @@ where
 }
 
 fn root_call_ab<THandler, TPosition, const DEPTH: usize>(
+    searcher: &mut Searcher,
     handler: &THandler,
     root: TPosition,
 ) -> MoveAndPV<THandler, TPosition, DEPTH>
@@ -176,7 +178,7 @@ where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
-    alpha_beta(
+    searcher.alpha_beta(
         handler,
         root,
         DEPTH,
@@ -187,6 +189,7 @@ where
 }
 
 fn root_call_pab<THandler, TPosition, const DEPTH: usize>(
+    searcher: &mut Searcher,
     handler: &THandler,
     root: TPosition,
 ) -> MoveAndPV<THandler, TPosition, DEPTH>
@@ -194,10 +197,11 @@ where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
-    p_alpha_beta(handler, root, DEPTH, DEPTH)
+    searcher.p_alpha_beta(handler, root, DEPTH, DEPTH)
 }
 
 fn root_call_pvs<THandler, TPosition, const DEPTH: usize>(
+    searcher: &mut Searcher,
     handler: &THandler,
     root: TPosition,
 ) -> MoveAndPV<THandler, TPosition, DEPTH>
@@ -205,7 +209,7 @@ where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
-    pvs(
+    searcher.pvs(
         handler,
         root,
         DEPTH,
@@ -216,6 +220,7 @@ where
 }
 
 fn root_call_scout<THandler, TPosition, const DEPTH: usize>(
+    searcher: &mut Searcher,
     handler: &THandler,
     root: TPosition,
 ) -> MoveAndPV<THandler, TPosition, DEPTH>
@@ -223,10 +228,11 @@ where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
-    scout(handler, root, DEPTH, DEPTH)
+    searcher.scout(handler, root, DEPTH, DEPTH)
 }
 
 fn root_call_sss<THandler, TPosition, const DEPTH: usize>(
+    searcher: &mut Searcher,
     handler: &THandler,
     root: TPosition,
 ) -> MoveAndPV<THandler, TPosition, DEPTH>
@@ -234,7 +240,7 @@ where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
-    sss(handler, root, DEPTH, DEPTH)
+    searcher.sss(handler, root, DEPTH, DEPTH)
 }
 
 fn raw_moves_display<T, const SIZE: usize>(
@@ -251,6 +257,7 @@ where
 }
 
 fn test_algorithms<THandler, TPosition, const DEPTH: usize>(
+    searcher: &mut Searcher,
     position_name: &str,
     handler_params: <THandler as GameHandler<TPosition>>::Params,
     startpos_params: <TPosition as GamePosition>::Params,
@@ -286,8 +293,10 @@ where
     seq!(N in 0..6 {
         println!("{}", algorithm_names.N.bright_cyan());
         let s = Instant::now();
-        let result: MoveAndPV<THandler, TPosition, DEPTH> = algorithms.N(&handler, startpos);
+        searcher.reset_leaf_count();
+        let result: MoveAndPV<THandler, TPosition, DEPTH> = algorithms.N(searcher, &handler, startpos);
         println!("Time elapsed: {} ms", s.elapsed().as_millis().to_string().bright_yellow());
+        println!("Leaf nodes evaluated: {}", searcher.get_leaf_count().to_string().bright_yellow());
         let recalculated_eval = eval_from_line(&handler, startpos, result.1);
         if recalculated_eval == result.0 {
             println!("Eval and Line {}", "MATCH".bright_green());
@@ -306,12 +315,17 @@ where
         }
         results.push(result);
     });
+
+    searcher.reset_leaf_count();
 }
 
 fn main() {
-    test_algorithms::<StockmanHandler, StockmanPos, 4>("Stockman, G.C. (1979)", (), ());
-    test_algorithms::<Ut3Handler, Ut3Board, 6>("Ultimate Tic-Tac-Toe", (), ());
+    let mut searcher = Searcher::new();
+
+    test_algorithms::<StockmanHandler, StockmanPos, 4>(&mut searcher, "Stockman, G.C. (1979)", (), ());
+    test_algorithms::<Ut3Handler, Ut3Board, 6>(&mut searcher, "Ultimate Tic-Tac-Toe", (), ());
     test_algorithms::<Uniform2bWideHandler, Uniform2bWidePos, 16>(
+        &mut searcher,
         "Uniform Tree (Branching Factor = 2)",
         Uniform2bWideParams {
             depth: 16,
@@ -349,6 +363,7 @@ fn main() {
 
     seq!(N in 0..24 {
         test_algorithms::<UnordIndHypTreeHandler, HypTreePos, { DEPTH_WIDTH_PAIRS.N.0 }>(
+            &mut searcher,
             &format!(
                 "Unordered-Independent Hypothetical Game Tree (Depth = {}, Width = {})",
                 DEPTH_WIDTH_PAIRS.N.0,
