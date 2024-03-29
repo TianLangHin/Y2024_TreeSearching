@@ -99,12 +99,14 @@ where
     TPosition: GamePosition,
 {
     let mut pos = initial_pos;
+    let mut depth = SIZE;
     for &mv in line.iter() {
         if let Some(m) = mv {
             pos = pos.play_move(m);
+            depth -= 1;
         }
     }
-    handler.evaluate(pos, 0, 0)
+    handler.evaluate(pos, depth, SIZE)
 }
 
 fn root_call_bb<THandler, TPosition, const DEPTH: usize>(
