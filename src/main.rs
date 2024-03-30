@@ -16,6 +16,50 @@ use seq_macro::seq;
 
 use std::time::Instant;
 
+#[derive(Clone, Copy, Debug)]
+struct AlgorithmResult {
+    pub avg_leaves: f64,
+    pub avg_ms: f64,
+    pub avg_us: f64,
+    pub avg_ns: f64,
+}
+
+impl AlgorithmResult {
+    fn new() -> Self {
+        Self {
+            avg_leaves: 0.0,
+            avg_ms: 0.0,
+            avg_us: 0.0,
+            avg_ns: 0.0,
+        }
+    }
+}
+
+impl Default for AlgorithmResult {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl std::ops::Add for AlgorithmResult {
+    type Output = AlgorithmResult;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            avg_leaves: self.avg_leaves + rhs.avg_leaves,
+            avg_ms: self.avg_ms + rhs.avg_ms,
+            avg_us: self.avg_us + rhs.avg_us,
+            avg_ns: self.avg_ns + rhs.avg_ns,
+        }
+    }
+}
+
+impl std::ops::AddAssign for AlgorithmResult {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
+}
+
 fn test_stockman_tree() {
     let handler = StockmanHandler::new(());
     let mut nodes = vec![StockmanPos::startpos(())];
@@ -211,11 +255,9 @@ where
     searcher.sss(handler, root, DEPTH, DEPTH)
 }
 
-fn raw_moves_display<T, const SIZE: usize>(
-    move_list: [Option<T>; SIZE]
-) -> String
+fn raw_moves_display<T, const SIZE: usize>(move_list: [Option<T>; SIZE]) -> String
 where
-    T: std::fmt::Debug
+    T: std::fmt::Debug,
 {
     move_list
         .iter()
@@ -229,8 +271,7 @@ fn test_algorithms_once<THandler, TPosition, const DEPTH: usize>(
     position_name: &str,
     handler_params: <THandler as GameHandler<TPosition>>::Params,
     startpos_params: <TPosition as GamePosition>::Params,
-)
-where
+) where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
@@ -258,10 +299,16 @@ where
     println!("{}", position_name.bright_magenta());
     seq!(N in 0..6 {
         println!("{}", algorithm_names.N.bright_cyan());
-        let s = Instant::now();
         searcher.reset_leaf_count();
+        let s = Instant::now();
         let result: MoveAndPV<THandler, TPosition, DEPTH> = algorithms.N(searcher, &handler, startpos);
-        println!("Time elapsed: {} ms", s.elapsed().as_millis().to_string().bright_yellow());
+        let elapsed = s.elapsed();
+        println!(
+            "Time elapsed: {} ms, {} us, {} ns",
+            elapsed.as_millis().to_string().bright_yellow(),
+            elapsed.as_micros().to_string().bright_cyan(),
+            elapsed.as_nanos().to_string().bright_blue(),
+        );
         println!("Leaf nodes evaluated: {}", searcher.get_leaf_count().to_string().bright_yellow());
         let recalculated_eval = eval_from_line(&handler, startpos, result.1);
         if recalculated_eval == result.0 {
@@ -284,10 +331,79 @@ where
     searcher.reset_leaf_count();
 }
 
+fn test_algorithms_average<THandler, TPosition, const DEPTH: usize>(
+    searcher: &mut Searcher,
+    position_name: &str,
+    times: usize,
+    handler_params: Vec<<THandler as GameHandler<TPosition>>::Params>,
+    startpos_params: <TPosition as GamePosition>::Params,
+) -> [AlgorithmResult; 6]
+where
+    THandler: GameHandler<TPosition>,
+    TPosition: GamePosition,
+{
+    if handler_params.len() < times {
+        panic!("List of GameHandler parameters needs to be equal to or more than the number of iterations");
+    }
+
+    let startpos = <TPosition as GamePosition>::startpos(startpos_params);
+
+    let algorithms = (
+        root_call_bb,
+        root_call_ab,
+        root_call_pab,
+        root_call_pvs,
+        root_call_scout,
+        root_call_sss,
+    );
+
+    let mut collections = [
+        AlgorithmResult::new(),
+        AlgorithmResult::new(),
+        AlgorithmResult::new(),
+        AlgorithmResult::new(),
+        AlgorithmResult::new(),
+        AlgorithmResult::new(),
+    ];
+
+    println!(
+        "Running {} times: {}",
+        times.to_string().bright_cyan(),
+        position_name.bright_magenta()
+    );
+    let mut i: usize = 1;
+    for param in handler_params {
+        println!("Iteration {}", i.to_string().bright_cyan());
+        let handler = <THandler as GameHandler<TPosition>>::new(param);
+        seq!(N in 0..6 {
+            searcher.reset_leaf_count();
+            let s = Instant::now();
+            let _: MoveAndPV<THandler, TPosition, DEPTH> = algorithms.N(searcher, &handler, startpos);
+            let elapsed = s.elapsed();
+            collections[N] += AlgorithmResult {
+                avg_leaves: (searcher.get_leaf_count() as f64) / (times as f64),
+                avg_ms: (elapsed.as_millis() as f64) / (times as f64),
+                avg_us: (elapsed.as_micros() as f64) / (times as f64),
+                avg_ns: (elapsed.as_nanos() as f64) / (times as f64),
+            };
+        });
+        i += 1;
+    }
+
+    searcher.reset_leaf_count();
+
+    collections
+}
+
 fn main() {
     let mut searcher = Searcher::new();
 
-    test_algorithms_once::<StockmanHandler, StockmanPos, 4>(&mut searcher, "Stockman, G.C. (1979)", (), ());
+    test_algorithms_once::<StockmanHandler, StockmanPos, 4>(
+        &mut searcher,
+        "Stockman, G.C. (1979)",
+        (),
+        (),
+    );
     test_algorithms_once::<Ut3Handler, Ut3Board, 6>(&mut searcher, "Ultimate Tic-Tac-Toe", (), ());
     test_algorithms_once::<Uniform2bWideHandler, Uniform2bWidePos, 16>(
         &mut searcher,
@@ -342,4 +458,24 @@ fn main() {
             8,
         );
     });
+
+    // Testing all 6 algorithms at once, averaging their results over different seeds
+    println!(
+        "{:#?}",
+        test_algorithms_average::<UnordIndHypTreeHandler, HypTreePos, 6>(
+            &mut searcher,
+            "U(3, 6)",
+            50,
+            (314159..314159 + 50)
+                .map(|seed| {
+                    HypTreeParams {
+                        depth: 6,
+                        width: 3,
+                        seed,
+                    }
+                })
+                .collect(),
+            6,
+        )
+    );
 }
