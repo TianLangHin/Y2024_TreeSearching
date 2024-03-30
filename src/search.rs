@@ -438,8 +438,12 @@ impl Searcher {
 
         if let Some(mv) = move_iter.next() {
             // Statement 6.
-            let (mut m, mut pv) =
-                self.scout::<THandler, TPosition, SIZE>(handler, pos.play_move(mv), depth - 1, max_depth);
+            let (mut m, mut pv) = self.scout::<THandler, TPosition, SIZE>(
+                handler,
+                pos.play_move(mv),
+                depth - 1,
+                max_depth,
+            );
             m = -m;
             pv[max_depth - depth] = Some(mv);
 
@@ -451,9 +455,20 @@ impl Searcher {
                 let next_pos = pos.play_move(mv);
 
                 // Statement 9.
-                if !self.test::<THandler, TPosition>(handler, next_pos, depth - 1, max_depth, -m, !op) {
-                    let (new_m, mut line) =
-                        self.scout::<THandler, TPosition, SIZE>(handler, next_pos, depth - 1, max_depth);
+                if !self.test::<THandler, TPosition>(
+                    handler,
+                    next_pos,
+                    depth - 1,
+                    max_depth,
+                    -m,
+                    !op,
+                ) {
+                    let (new_m, mut line) = self.scout::<THandler, TPosition, SIZE>(
+                        handler,
+                        next_pos,
+                        depth - 1,
+                        max_depth,
+                    );
                     let new_m = -new_m;
                     line[max_depth - depth] = Some(mv);
                     m = new_m;
@@ -557,12 +572,14 @@ impl Searcher {
                 merit: (TEval, [Option<TMove>; SIZE]),
                 depth: usize,
                 line: [Option<TMove>; SIZE],
+                iteration: usize,
             },
             Solved {
                 node: TPos,
                 merit: (TEval, [Option<TMove>; SIZE]),
                 depth: usize,
                 line: [Option<TMove>; SIZE],
+                iteration: usize,
             },
         }
 
@@ -579,12 +596,14 @@ impl Searcher {
                         merit,
                         depth: _,
                         line: _,
+                        iteration: _,
                     } => merit,
                     Self::Live {
                         node: _,
                         merit,
                         depth: _,
                         line: _,
+                        iteration: _,
                     } => merit,
                 }
             }
@@ -596,12 +615,14 @@ impl Searcher {
                         merit: _,
                         depth,
                         line: _,
+                        iteration: _,
                     } => depth,
                     Self::Live {
                         node: _,
                         merit: _,
                         depth,
                         line: _,
+                        iteration: _,
                     } => depth,
                 }
             }
@@ -613,13 +634,34 @@ impl Searcher {
                         merit: _,
                         depth: _,
                         line,
+                        iteration: _,
                     } => line,
                     Self::Live {
                         node: _,
                         merit: _,
                         depth: _,
                         line,
+                        iteration: _,
                     } => line,
+                }
+            }
+
+            fn iteration(&self) -> usize {
+                match *self {
+                    Self::Solved {
+                        node: _,
+                        merit: _,
+                        depth: _,
+                        line: _,
+                        iteration,
+                    } => iteration,
+                    Self::Live {
+                        node: _,
+                        merit: _,
+                        depth: _,
+                        line: _,
+                        iteration,
+                    } => iteration,
                 }
             }
 
@@ -646,7 +688,10 @@ impl Searcher {
             TMove: Clone + Copy + std::fmt::Debug + PartialEq + Eq,
         {
             fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-                self.merit().0.cmp(&other.merit().0)
+                self.merit()
+                    .0
+                    .cmp(&other.merit().0)
+                    .then_with(|| self.iteration().cmp(&other.iteration()))
             }
         }
 
@@ -667,7 +712,10 @@ impl Searcher {
             ),
             depth,
             line: [None; SIZE],
+            iteration: 0,
         });
+
+        let mut i: usize = 1;
 
         while let Some(state) = open.pop() {
             match state {
@@ -676,6 +724,7 @@ impl Searcher {
                     merit: (h, pv),
                     depth: d,
                     line: mut l,
+                    iteration: _,
                 } => {
                     if d == max_depth {
                         return (h, pv);
@@ -698,6 +747,7 @@ impl Searcher {
                                 merit: (h, pv),
                                 depth: d,
                                 line: l,
+                                iteration: i,
                             });
                         } else {
                             // Case 3.
@@ -706,6 +756,7 @@ impl Searcher {
                                 merit: (h, pv),
                                 depth: d + 1,
                                 line: l,
+                                iteration: i,
                             });
                         }
                     } else {
@@ -723,6 +774,7 @@ impl Searcher {
                             merit: (h, pv),
                             depth: d + 1,
                             line: l,
+                            iteration: i,
                         });
                     }
                 }
@@ -731,6 +783,7 @@ impl Searcher {
                     merit: (h, pv),
                     depth: d,
                     line: l,
+                    iteration: _,
                 } => {
                     let mut legal_moves = handler.get_legal_moves(n);
                     if d == 0 {
@@ -747,6 +800,7 @@ impl Searcher {
                             merit: if h < eval { (h, pv) } else { (eval, l) },
                             depth: d,
                             line: l,
+                            iteration: i,
                         });
                     } else if let Some(first_move) = legal_moves.next() {
                         let mut line = l;
@@ -758,6 +812,7 @@ impl Searcher {
                                 merit: (h, pv),
                                 depth: d - 1,
                                 line,
+                                iteration: i,
                             });
                             for mv in legal_moves {
                                 line[max_depth - d] = Some(mv);
@@ -766,6 +821,7 @@ impl Searcher {
                                     merit: (h, pv),
                                     depth: d - 1,
                                     line,
+                                    iteration: i,
                                 });
                             }
                         } else {
@@ -775,6 +831,7 @@ impl Searcher {
                                 merit: (h, pv),
                                 depth: d - 1,
                                 line,
+                                iteration: i,
                             });
                         }
                     } else {
@@ -791,11 +848,12 @@ impl Searcher {
                             merit: if h < eval { (h, pv) } else { (eval, l) },
                             depth: d,
                             line: l,
+                            iteration: i,
                         });
                     }
                 }
             }
-            // println!("{:?}", &open);
+            i += 1;
         }
         panic!("State space operator is faulty");
     }
