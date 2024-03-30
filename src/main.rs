@@ -224,7 +224,7 @@ where
         .join(", ")
 }
 
-fn test_algorithms<THandler, TPosition, const DEPTH: usize>(
+fn test_algorithms_once<THandler, TPosition, const DEPTH: usize>(
     searcher: &mut Searcher,
     position_name: &str,
     handler_params: <THandler as GameHandler<TPosition>>::Params,
@@ -255,8 +255,6 @@ where
         "sss",
     );
 
-    let mut results: Vec<MoveAndPV<THandler, TPosition, DEPTH>> = Vec::new();
-
     println!("{}", position_name.bright_magenta());
     seq!(N in 0..6 {
         println!("{}", algorithm_names.N.bright_cyan());
@@ -281,7 +279,6 @@ where
                 format!("{:?}", recalculated_eval).bright_red(),
             );
         }
-        results.push(result);
     });
 
     searcher.reset_leaf_count();
@@ -290,9 +287,9 @@ where
 fn main() {
     let mut searcher = Searcher::new();
 
-    test_algorithms::<StockmanHandler, StockmanPos, 4>(&mut searcher, "Stockman, G.C. (1979)", (), ());
-    test_algorithms::<Ut3Handler, Ut3Board, 6>(&mut searcher, "Ultimate Tic-Tac-Toe", (), ());
-    test_algorithms::<Uniform2bWideHandler, Uniform2bWidePos, 16>(
+    test_algorithms_once::<StockmanHandler, StockmanPos, 4>(&mut searcher, "Stockman, G.C. (1979)", (), ());
+    test_algorithms_once::<Ut3Handler, Ut3Board, 6>(&mut searcher, "Ultimate Tic-Tac-Toe", (), ());
+    test_algorithms_once::<Uniform2bWideHandler, Uniform2bWidePos, 16>(
         &mut searcher,
         "Uniform Tree (Branching Factor = 2)",
         Uniform2bWideParams {
@@ -330,7 +327,7 @@ fn main() {
     ];
 
     seq!(N in 0..24 {
-        test_algorithms::<UnordIndHypTreeHandler, HypTreePos, { DEPTH_WIDTH_PAIRS[N].0 }>(
+        test_algorithms_once::<UnordIndHypTreeHandler, HypTreePos, { DEPTH_WIDTH_PAIRS[N].0 }>(
             &mut searcher,
             &format!(
                 "Unordered-Independent Hypothetical Game Tree (Depth = {}, Width = {})",
