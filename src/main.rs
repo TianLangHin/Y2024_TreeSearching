@@ -16,38 +16,6 @@ use seq_macro::seq;
 
 use std::time::Instant;
 
-// Depth-Width pair for setting each hypothetical tree configuration.
-type TreeSetting = (usize, usize);
-
-// The typing for the list of settings to be tested,
-// but arranged as a tuple since this is required by const-ness in seq_macro.
-type AllTreeSettings = (
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-    TreeSetting,
-);
-
 fn test_stockman_tree() {
     let handler = StockmanHandler::new(());
     let mut nodes = vec![StockmanPos::startpos(())];
@@ -334,7 +302,7 @@ fn main() {
         (),
     );
 
-    const DEPTH_WIDTH_PAIRS: AllTreeSettings = (
+    const DEPTH_WIDTH_PAIRS: [(usize, usize); 24] = [
         (2, 2),
         (2, 3),
         (2, 4),
@@ -359,19 +327,19 @@ fn main() {
         (5, 4),
         (6, 2),
         (6, 3),
-    );
+    ];
 
     seq!(N in 0..24 {
-        test_algorithms::<UnordIndHypTreeHandler, HypTreePos, { DEPTH_WIDTH_PAIRS.N.0 }>(
+        test_algorithms::<UnordIndHypTreeHandler, HypTreePos, { DEPTH_WIDTH_PAIRS[N].0 }>(
             &mut searcher,
             &format!(
                 "Unordered-Independent Hypothetical Game Tree (Depth = {}, Width = {})",
-                DEPTH_WIDTH_PAIRS.N.0,
-                DEPTH_WIDTH_PAIRS.N.1,
+                DEPTH_WIDTH_PAIRS[N].0,
+                DEPTH_WIDTH_PAIRS[N].1,
             ),
             HypTreeParams {
-                depth: DEPTH_WIDTH_PAIRS.N.0,
-                width: DEPTH_WIDTH_PAIRS.N.1,
+                depth: DEPTH_WIDTH_PAIRS[N].0,
+                width: DEPTH_WIDTH_PAIRS[N].1,
                 seed: 314159,
             },
             8,
