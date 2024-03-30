@@ -211,44 +211,38 @@ impl Searcher {
             m = -m;
             pv[max_depth - depth] = Some(mv);
 
-            let mut t: <THandler as GameHandler<TPosition>>::Eval;
-
             // Statement 7.
             for mv in move_iter {
                 let next_pos = pos.play_move(mv);
 
                 // Statement 9.
-                t = -self.f_alpha_beta::<THandler, TPosition>(
+                let t = -self.f_alpha_beta::<THandler, TPosition, SIZE>(
                     handler,
                     next_pos,
                     depth - 1,
                     max_depth,
                     -m - <THandler as GameHandler<TPosition>>::EVAL_EPSILON,
                     -m,
-                );
+                ).0;
 
                 // Statement 10.
                 if t > m {
-                    let (t, line) = self.alpha_beta::<THandler, TPosition, SIZE>(
+                    // Statement 11.
+                    // In Muszycka & Shinghal (1985), this statement was erroneously written as
+                    // `m = -alphabeta(p_i, -MAXINT, -t);` as opposed to
+                    // `m = -falphabeta(p_i, -MAXINT, -t);`. Fishburn & Finkel (1980)
+                    // originally describe this algorithm correctly.
+                    let (t, mut line) = self.f_alpha_beta::<THandler, TPosition, SIZE>(
                         handler,
                         next_pos,
                         depth - 1,
-                        depth - 1,
+                        max_depth,
                         <THandler as GameHandler<TPosition>>::EVAL_MINIMUM,
-                        <THandler as GameHandler<TPosition>>::EVAL_MAXIMUM,
+                        -t,
                     );
-                    let t = -t;
-                    if t > m {
-                        m = t;
-                        // Use alpha-beta with maximal window to retain PV without premature beta cutoffs.
-                        // `-t` can be used in place of `EVAL_MAXIMUM` if PV does not need to be preserved.
-                        // Time consumption increases due to the requirement of preserving PV.
-                        // Fill in the PV with the shifted partial line returned from shallow alpha_beta call.
-                        pv[max_depth - depth] = Some(mv);
-                        for (i, &line_element) in (max_depth - depth + 1..SIZE).zip(line.iter()) {
-                            pv[i] = line_element;
-                        }
-                    }
+                    m = -t;
+                    line[max_depth - depth] = Some(mv);
+                    pv = line;
                 }
             }
 
@@ -260,7 +254,7 @@ impl Searcher {
         }
     }
 
-    pub fn f_alpha_beta<THandler, TPosition>(
+    pub fn f_alpha_beta<THandler, TPosition, const SIZE: usize>(
         &mut self,
         handler: &THandler,
         pos: TPosition,
@@ -268,7 +262,7 @@ impl Searcher {
         max_depth: usize,
         alpha: <THandler as GameHandler<TPosition>>::Eval,
         beta: <THandler as GameHandler<TPosition>>::Eval,
-    ) -> <THandler as GameHandler<TPosition>>::Eval
+    ) -> MoveAndPV<THandler, TPosition, SIZE>
     where
         THandler: GameHandler<TPosition>,
         TPosition: GamePosition,
@@ -277,7 +271,7 @@ impl Searcher {
         // Statement 5.
         if depth == 0 {
             self.increment_leaf_count();
-            return handler.evaluate(pos, depth, max_depth);
+            return (handler.evaluate(pos, depth, max_depth), [None; SIZE]);
         }
 
         // Statement 4.
@@ -286,24 +280,29 @@ impl Searcher {
         if let Some(mut mv) = move_iter.next() {
             // Statement 6.
             let mut m = <THandler as GameHandler<TPosition>>::EVAL_MINIMUM;
+            let mut pv = [None; SIZE];
 
             loop {
                 // Statement 9.
-                m = std::cmp::max(
-                    m,
-                    -self.f_alpha_beta::<THandler, TPosition>(
-                        handler,
-                        pos.play_move(mv),
-                        depth - 1,
-                        max_depth,
-                        -beta,
-                        -std::cmp::max(m, alpha),
-                    ),
+                let (t, mut line) = self.f_alpha_beta::<THandler, TPosition, SIZE>(
+                    handler,
+                    pos.play_move(mv),
+                    depth - 1,
+                    max_depth,
+                    -beta,
+                    -std::cmp::max(m, alpha),
                 );
+                let t = -t;
+                line[max_depth - depth] = Some(mv);
+
+                if t > m {
+                    m = t;
+                    pv = line;
+                }
 
                 // Statement 10.
                 if m >= beta {
-                    return m;
+                    return (m, line);
                 }
 
                 if let Some(new_mv) = move_iter.next() {
@@ -313,11 +312,11 @@ impl Searcher {
                 }
             }
 
-            m
+            (m, pv)
         } else {
             // Statement 5.
             self.increment_leaf_count();
-            handler.evaluate(pos, depth, max_depth)
+            (handler.evaluate(pos, depth, max_depth), [None; SIZE])
         }
     }
 
@@ -368,40 +367,33 @@ impl Searcher {
                     let next_pos = pos.play_move(mv);
 
                     // Statement 11.
-                    let (t, mut line) = self.pvs::<THandler, TPosition, SIZE>(
+                    let t = -self.pvs::<THandler, TPosition, SIZE>(
                         handler,
                         next_pos,
                         depth - 1,
                         max_depth,
                         -bound - <THandler as GameHandler<TPosition>>::EVAL_EPSILON,
                         -bound,
-                    );
-                    let t = -t;
-                    line[max_depth - depth] = Some(mv);
+                    ).0;
 
                     // Statement 12.
                     if t > m {
                         // Statement 13.
-                        let (new_m, mut line) = self.pvs::<THandler, TPosition, SIZE>(
+                        let (value, mut line) = self.pvs::<THandler, TPosition, SIZE>(
                             handler,
                             next_pos,
                             depth - 1,
                             max_depth,
                             -beta,
-                            <THandler as GameHandler<TPosition>>::EVAL_MAXIMUM,
+                            -t,
                         );
-                        // Use pvs with maximal window to retain PV without premature beta cutoffs.
-                        // `-t` can be used in place of `EVAL_MAXIMUM` if PV does not need to be preserved.
-                        // Time consumption increases due to the requirement of preserving PV.
-                        // Fill in the PV with the shifted partial line returned from shallow alpha_beta call.
-                        let new_m = -new_m;
+                        m = -value;
                         line[max_depth - depth] = Some(mv);
-                        m = new_m;
                         pv = line;
                     }
                     // Statement 14.
                     if m >= beta {
-                        return (m, line);
+                        return (m, pv);
                     }
                 }
             }
