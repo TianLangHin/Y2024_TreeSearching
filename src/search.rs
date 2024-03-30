@@ -20,6 +20,13 @@ pub struct Searcher {
     leaf_count: u128,
 }
 
+// Suggestion from #[warn(clippy::new_without_default)]
+impl Default for Searcher {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Searcher {
     pub fn new() -> Self {
         Self { leaf_count: 0 }
