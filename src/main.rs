@@ -11,7 +11,6 @@ pub mod prelude;
 pub mod search;
 
 use colored::Colorize;
-use rayon::prelude::*;
 use seq_macro::seq;
 
 use std::time::Instant;
@@ -107,7 +106,7 @@ fn root_call_bb<THandler, TPosition, const DEPTH: usize>(
     searcher: &mut Searcher,
     handler: &THandler,
     root: TPosition,
-) -> MoveAndPV<THandler, TPosition, DEPTH>
+) -> EvalAndPV<THandler, TPosition, DEPTH>
 where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
@@ -125,7 +124,7 @@ fn root_call_ab<THandler, TPosition, const DEPTH: usize>(
     searcher: &mut Searcher,
     handler: &THandler,
     root: TPosition,
-) -> MoveAndPV<THandler, TPosition, DEPTH>
+) -> EvalAndPV<THandler, TPosition, DEPTH>
 where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
@@ -144,7 +143,7 @@ fn root_call_pab<THandler, TPosition, const DEPTH: usize>(
     searcher: &mut Searcher,
     handler: &THandler,
     root: TPosition,
-) -> MoveAndPV<THandler, TPosition, DEPTH>
+) -> EvalAndPV<THandler, TPosition, DEPTH>
 where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
@@ -156,7 +155,7 @@ fn root_call_pvs<THandler, TPosition, const DEPTH: usize>(
     searcher: &mut Searcher,
     handler: &THandler,
     root: TPosition,
-) -> MoveAndPV<THandler, TPosition, DEPTH>
+) -> EvalAndPV<THandler, TPosition, DEPTH>
 where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
@@ -175,7 +174,7 @@ fn root_call_scout<THandler, TPosition, const DEPTH: usize>(
     searcher: &mut Searcher,
     handler: &THandler,
     root: TPosition,
-) -> MoveAndPV<THandler, TPosition, DEPTH>
+) -> EvalAndPV<THandler, TPosition, DEPTH>
 where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
@@ -187,7 +186,7 @@ fn root_call_sss<THandler, TPosition, const DEPTH: usize>(
     searcher: &mut Searcher,
     handler: &THandler,
     root: TPosition,
-) -> MoveAndPV<THandler, TPosition, DEPTH>
+) -> EvalAndPV<THandler, TPosition, DEPTH>
 where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
@@ -241,7 +240,7 @@ fn test_algorithms_once<THandler, TPosition, const DEPTH: usize>(
         println!("{}", algorithm_names.N.bright_cyan());
         searcher.reset_leaf_count();
         let s = Instant::now();
-        let result: MoveAndPV<THandler, TPosition, DEPTH> = algorithms.N(searcher, &handler, startpos);
+        let result: EvalAndPV<THandler, TPosition, DEPTH> = algorithms.N(searcher, &handler, startpos);
         let elapsed = s.elapsed();
         println!(
             "Time elapsed: {} ms, {} us, {} ns",
@@ -331,13 +330,13 @@ fn test_algorithms_average<THandler, TPosition, const DEPTH: usize>(
         }
 
         let handler = <THandler as GameHandler<TPosition>>::new(param);
-        let mut results: [Option<MoveAndPV<THandler, TPosition, DEPTH>>; 6] = [None; 6];
+        let mut results: [Option<EvalAndPV<THandler, TPosition, DEPTH>>; 6] = [None; 6];
 
         seq!(N in 0..6 {
             searcher.reset_leaf_count();
 
             let s = Instant::now();
-            let result: MoveAndPV<THandler, TPosition, DEPTH> = algorithms.N(searcher, &handler, startpos);
+            let result: EvalAndPV<THandler, TPosition, DEPTH> = algorithms.N(searcher, &handler, startpos);
             let elapsed = s.elapsed();
 
             let recalculated_eval = eval_from_line(&handler, startpos, result.1);

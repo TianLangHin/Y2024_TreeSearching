@@ -8,7 +8,7 @@ use std::time::Instant;
 // Return type of all searching algorithms,
 // consisting of the calculated heuristic evaluation of the position
 // and the series of moves that the evaluation corresponds to.
-pub type MoveAndPV<THandler, TPosition, const SIZE: usize> = (
+pub type EvalAndPV<THandler, TPosition, const SIZE: usize> = (
     <THandler as GameHandler<TPosition>>::Eval,
     [Option<<TPosition as GamePosition>::Move>; SIZE],
 );
@@ -168,7 +168,7 @@ impl Searcher {
         depth: usize,
         max_depth: usize,
         bound: <THandler as GameHandler<TPosition>>::Eval,
-    ) -> MoveAndPV<THandler, TPosition, SIZE>
+    ) -> EvalAndPV<THandler, TPosition, SIZE>
     where
         THandler: GameHandler<TPosition>,
         TPosition: GamePosition,
@@ -234,7 +234,7 @@ impl Searcher {
         max_depth: usize,
         alpha: <THandler as GameHandler<TPosition>>::Eval,
         beta: <THandler as GameHandler<TPosition>>::Eval,
-    ) -> MoveAndPV<THandler, TPosition, SIZE>
+    ) -> EvalAndPV<THandler, TPosition, SIZE>
     where
         THandler: GameHandler<TPosition>,
         TPosition: GamePosition,
@@ -299,7 +299,7 @@ impl Searcher {
         pos: TPosition,
         depth: usize,
         max_depth: usize,
-    ) -> MoveAndPV<THandler, TPosition, SIZE>
+    ) -> EvalAndPV<THandler, TPosition, SIZE>
     where
         THandler: GameHandler<TPosition>,
         TPosition: GamePosition,
@@ -378,7 +378,7 @@ impl Searcher {
         max_depth: usize,
         alpha: <THandler as GameHandler<TPosition>>::Eval,
         beta: <THandler as GameHandler<TPosition>>::Eval,
-    ) -> MoveAndPV<THandler, TPosition, SIZE>
+    ) -> EvalAndPV<THandler, TPosition, SIZE>
     where
         THandler: GameHandler<TPosition>,
         TPosition: GamePosition,
@@ -445,7 +445,7 @@ impl Searcher {
         max_depth: usize,
         alpha: <THandler as GameHandler<TPosition>>::Eval,
         beta: <THandler as GameHandler<TPosition>>::Eval,
-    ) -> MoveAndPV<THandler, TPosition, SIZE>
+    ) -> EvalAndPV<THandler, TPosition, SIZE>
     where
         THandler: GameHandler<TPosition>,
         TPosition: GamePosition,
@@ -531,7 +531,7 @@ impl Searcher {
         pos: TPosition,
         depth: usize,
         max_depth: usize,
-    ) -> MoveAndPV<THandler, TPosition, SIZE>
+    ) -> EvalAndPV<THandler, TPosition, SIZE>
     where
         THandler: GameHandler<TPosition>,
         TPosition: GamePosition,
@@ -662,7 +662,7 @@ impl Searcher {
         root: TPosition,
         depth: usize,
         max_depth: usize,
-    ) -> MoveAndPV<THandler, TPosition, SIZE>
+    ) -> EvalAndPV<THandler, TPosition, SIZE>
     where
         THandler: GameHandler<TPosition>,
         TPosition: GamePosition,
