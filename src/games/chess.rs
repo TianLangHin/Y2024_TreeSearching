@@ -40,7 +40,6 @@ const FLAG_ENPASSANT: u64 = 3;
 const PRMT_QUEEN: u64 = 0;
 const PRMT_ROOK: u64 = 1;
 const PRMT_BISHOP: u64 = 2;
-const PRMT_KNIGHT: u64 = 3;
 
 const NO_EN_PASSANT: u64 = 64;
 

@@ -49,13 +49,6 @@ pub struct Uniform2bWideParams {
     pub seed: u64,
 }
 
-// So that `node_values` does not have to be a public field
-impl Uniform2bWideHandler {
-    fn get_node_values(&self) -> BTreeMap<u32, i32> {
-        self.node_values.clone()
-    }
-}
-
 impl GameHandler<Uniform2bWidePos> for Uniform2bWideHandler {
     type Eval = i32;
     type Params = Uniform2bWideParams;
