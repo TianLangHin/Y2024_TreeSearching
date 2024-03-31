@@ -1,5 +1,9 @@
 use crate::prelude::*;
+
+use rayon::prelude::*;
+
 use std::collections::BinaryHeap;
+use std::time::Instant;
 
 // Return type of all searching algorithms,
 // consisting of the calculated heuristic evaluation of the position
@@ -28,10 +32,14 @@ impl Default for Searcher {
 }
 
 impl Searcher {
+    // The only internal state of `Searcher` that gets mutated incrementally
+    // as an algorithm runs is the number of leaf nodes evaluated to this point.
     pub fn new() -> Self {
         Self { leaf_count: 0 }
     }
 
+    // Functions for the algorithms to increment the `leaf_count`
+    // and for the user to reset this count in between separate algorithm calls.
     pub fn increment_leaf_count(&mut self) {
         self.leaf_count += 1;
     }
@@ -42,6 +50,112 @@ impl Searcher {
 
     pub fn reset_leaf_count(&mut self) {
         self.leaf_count = 0;
+    }
+
+    // Utility functions for testing legal move generation and calculating
+    // the total number of leaf nodes in a maximal tree of a given depth.
+    // The terminology of `perft` is borrowed from the functionality of chess engines
+    // that carries out this functionality, commonly used for legal move generation debugging.
+    // Since many game trees are very large in size, we give parallel implementations as well,
+    // with the side effect that verbose parallel options do not have a move printing order guarantee.
+    fn perft<THandler, TPosition>(&self, depth: usize, pos: TPosition, handler: &THandler) -> u128
+    where
+        THandler: GameHandler<TPosition>,
+        TPosition: GamePosition,
+    {
+        if depth == 1 {
+            handler.get_legal_moves(pos).count() as u128
+        } else {
+            handler
+                .get_legal_moves(pos)
+                .map(|mv| self.perft(depth - 1, pos.play_move(mv), handler))
+                .sum()
+        }
+    }
+
+    pub fn perft_div_serial<THandler, TPosition>(
+        &self,
+        depth: usize,
+        pos: TPosition,
+        handler: &THandler,
+        verbose: bool,
+    ) where
+        THandler: GameHandler<TPosition>,
+        TPosition: GamePosition,
+    {
+        if verbose {
+            println!("Serial perft (Depth = {})", depth);
+        }
+        if depth == 1 {
+            let s = Instant::now();
+            println!("Nodes searched: {}", handler.get_legal_moves(pos).count());
+            println!("Time elapsed: {} ms", s.elapsed().as_millis());
+            return;
+        }
+        let s = Instant::now();
+        let sum: u128 = if verbose {
+            handler
+                .get_legal_moves(pos)
+                .map(|mv| {
+                    let num = self.perft(depth - 1, pos.play_move(mv), handler);
+                    println!("{:?}: {num}", mv);
+                    num
+                })
+                .sum()
+        } else {
+            handler
+                .get_legal_moves(pos)
+                .map(|mv| self.perft(depth - 1, pos.play_move(mv), handler))
+                .sum()
+        };
+        println!("Nodes searched: {sum}");
+        println!("Time elapsed {} ms", s.elapsed().as_millis());
+    }
+
+    // std::marker::Sync is not enforced in the prelude traits,
+    // but is required for the parallel perft implementation.
+    pub fn perft_div_parallel<THandler, TPosition>(
+        &self,
+        depth: usize,
+        pos: TPosition,
+        handler: &THandler,
+        verbose: bool,
+    ) where
+        THandler: GameHandler<TPosition> + Sync,
+        TPosition: GamePosition + Sync,
+        <TPosition as GamePosition>::Move: Sync,
+    {
+        if verbose {
+            println!("Serial perft (Depth = {})", depth);
+        }
+        if depth == 1 {
+            let s = Instant::now();
+            println!("Nodes searched: {}", handler.get_legal_moves(pos).count());
+            println!("Time elapsed: {} ms", s.elapsed().as_millis());
+            return;
+        }
+        let s = Instant::now();
+        let sum: u128 = if verbose {
+            handler
+                .get_legal_moves(pos)
+                .collect::<Vec<_>>()
+                .par_iter()
+                .map(|&mv| {
+                    let num = self.perft(depth - 1, pos.play_move(mv), handler);
+                    println!("{:?}: {num}", mv);
+                    num
+                })
+                .sum()
+        } else {
+            handler
+                .get_legal_moves(pos)
+                .collect::<Vec<_>>()
+                .par_iter()
+                .map(|&mv| self.perft(depth - 1, pos.play_move(mv), handler))
+                .sum()
+        };
+        println!("Nodes searched: {sum}");
+        println!("Time elapsed {} ms", s.elapsed().as_millis());
     }
 
     // Replication of algorithms described in Muszycka & Shinghal (1985).
@@ -216,14 +330,16 @@ impl Searcher {
                 let next_pos = pos.play_move(mv);
 
                 // Statement 9.
-                let t = -self.f_alpha_beta::<THandler, TPosition, SIZE>(
-                    handler,
-                    next_pos,
-                    depth - 1,
-                    max_depth,
-                    -m - <THandler as GameHandler<TPosition>>::EVAL_EPSILON,
-                    -m,
-                ).0;
+                let t = -self
+                    .f_alpha_beta::<THandler, TPosition, SIZE>(
+                        handler,
+                        next_pos,
+                        depth - 1,
+                        max_depth,
+                        -m - <THandler as GameHandler<TPosition>>::EVAL_EPSILON,
+                        -m,
+                    )
+                    .0;
 
                 // Statement 10.
                 if t > m {
@@ -367,14 +483,16 @@ impl Searcher {
                     let next_pos = pos.play_move(mv);
 
                     // Statement 11.
-                    let t = -self.pvs::<THandler, TPosition, SIZE>(
-                        handler,
-                        next_pos,
-                        depth - 1,
-                        max_depth,
-                        -bound - <THandler as GameHandler<TPosition>>::EVAL_EPSILON,
-                        -bound,
-                    ).0;
+                    let t = -self
+                        .pvs::<THandler, TPosition, SIZE>(
+                            handler,
+                            next_pos,
+                            depth - 1,
+                            max_depth,
+                            -bound - <THandler as GameHandler<TPosition>>::EVAL_EPSILON,
+                            -bound,
+                        )
+                        .0;
 
                     // Statement 12.
                     if t > m {

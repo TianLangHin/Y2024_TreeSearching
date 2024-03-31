@@ -79,66 +79,6 @@ fn test_stockman_tree() {
     }
 }
 
-fn perft(depth: usize, pos: ChessPos, handler: &ChessHandler) -> u64 {
-    if depth == 1 {
-        return handler.get_legal_moves(pos).count() as u64;
-    }
-    handler
-        .get_legal_moves(pos)
-        .map(|mv| perft(depth - 1, pos.play_move(mv), handler))
-        .sum()
-}
-
-fn perft_div_main(depth: usize, pos: ChessPos, handler: &ChessHandler) {
-    println!("Serial perft");
-    if depth == 1 {
-        let s = Instant::now();
-        println!("Nodes searched: {}", handler.get_legal_moves(pos).count());
-        println!("Time elapsed: {} ms", s.elapsed().as_millis());
-        return;
-    }
-    let s = Instant::now();
-    let sum: u64 = handler
-        .get_legal_moves(pos)
-        .map(|mv| {
-            let num = perft(depth - 1, pos.play_move(mv), handler);
-            println!(
-                "{}: {num}",
-                handler.move_string(mv, (pos.squares >> 19) & 1)
-            );
-            num
-        })
-        .sum();
-    println!("Nodes searched: {sum}");
-    println!("Time elapsed: {} ms", s.elapsed().as_millis());
-}
-
-fn perft_div_main_par(depth: usize, pos: ChessPos, handler: &ChessHandler) {
-    println!("Parallel perft");
-    if depth == 1 {
-        let s = Instant::now();
-        println!("Nodes searched: {}", handler.get_legal_moves(pos).count());
-        println!("Time elapsed: {} ms", s.elapsed().as_millis());
-        return;
-    }
-    let s = Instant::now();
-    let sum: u64 = handler
-        .get_legal_moves(pos)
-        .collect::<Vec<_>>()
-        .par_iter()
-        .map(|&mv| {
-            let num = perft(depth - 1, pos.play_move(mv), handler);
-            println!(
-                "{}: {num}",
-                handler.move_string(mv, (pos.squares >> 19) & 1)
-            );
-            num
-        })
-        .sum();
-    println!("Nodes searched: {sum}");
-    println!("Time elapsed: {} ms", s.elapsed().as_millis());
-}
-
 fn eval_from_line<THandler, TPosition, const SIZE: usize>(
     handler: &THandler,
     initial_pos: TPosition,
@@ -339,8 +279,7 @@ fn test_algorithms_average<THandler, TPosition, const DEPTH: usize>(
     handler_params: Vec<<THandler as GameHandler<TPosition>>::Params>,
     startpos_params: <TPosition as GamePosition>::Params,
     verbose: bool,
-)
-where
+) where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
@@ -387,7 +326,6 @@ where
 
     let mut i: usize = 1;
     for param in handler_params {
-
         if verbose {
             println!("Iteration {}", i.to_string().bright_cyan());
         }
@@ -430,9 +368,15 @@ where
         let algorithms_match = results
             .iter()
             .skip(1)
-            .fold((results[0], true), |(previous_result, all_match), &current_result| {
-                (previous_result, all_match && previous_result == current_result)
-            })
+            .fold(
+                (results[0], true),
+                |(previous_result, all_match), &current_result| {
+                    (
+                        previous_result,
+                        all_match && previous_result == current_result,
+                    )
+                },
+            )
             .1;
 
         if !algorithms_match {
@@ -447,12 +391,29 @@ where
 
     println!("{}", position_name.bright_magenta());
     for (result, alg_name) in stats.iter().zip(algorithm_names.iter()) {
-        let AlgorithmStats { avg_leaves, avg_ms, avg_us, avg_ns } = result;
+        let AlgorithmStats {
+            avg_leaves,
+            avg_ms,
+            avg_us,
+            avg_ns,
+        } = result;
         println!("Algorithm Tested: {}", alg_name.bright_cyan());
-        println!("Average number of leaf nodes evaluated: {}", format!("{:.2}", avg_leaves).bright_yellow());
-        println!("Average compute time (milliseconds, 2 d.p.): {} ms", format!("{:.2}", avg_ms).bright_blue());
-        println!("Average compute time (microseconds, 2 d.p.): {} us", format!("{:.2}", avg_us).bright_blue());
-        println!("Average compute time (nanoseconds, 2 d.p.): {} ns", format!("{:.2}", avg_ns).bright_blue());
+        println!(
+            "Average number of leaf nodes evaluated: {}",
+            format!("{:.2}", avg_leaves).bright_yellow()
+        );
+        println!(
+            "Average compute time (milliseconds, 2 d.p.): {} ms",
+            format!("{:.2}", avg_ms).bright_blue()
+        );
+        println!(
+            "Average compute time (microseconds, 2 d.p.): {} us",
+            format!("{:.2}", avg_us).bright_blue()
+        );
+        println!(
+            "Average compute time (nanoseconds, 2 d.p.): {} ns",
+            format!("{:.2}", avg_ns).bright_blue()
+        );
     }
 
     searcher.reset_leaf_count();
@@ -548,16 +509,13 @@ fn main() {
         "U(8, 8)",
         50,
         (314159..314159 + 50)
-            .map(|seed| {
-                HypTreeParams {
-                    depth: 8,
-                    width: 8,
-                    seed,
-                }
+            .map(|seed| HypTreeParams {
+                depth: 8,
+                width: 8,
+                seed,
             })
             .collect(),
         8,
         true,
     );
-
 }
