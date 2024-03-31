@@ -460,7 +460,7 @@ fn main() {
                 width: DEPTH_WIDTH_PAIRS[N].1,
                 seed: 314159,
             },
-            8,
+            DEPTH_WIDTH_PAIRS[N].1,
         );
     });
 
@@ -479,7 +479,7 @@ fn main() {
                     }
                 })
                 .collect(),
-            DEPTH_WIDTH_PAIRS[N].0,
+            DEPTH_WIDTH_PAIRS[N].1,
             false,
         );
     });
