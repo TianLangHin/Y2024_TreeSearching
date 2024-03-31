@@ -58,7 +58,7 @@ impl Searcher {
     // that carries out this functionality, commonly used for legal move generation debugging.
     // Since many game trees are very large in size, we give parallel implementations as well,
     // with the side effect that verbose parallel options do not have a move printing order guarantee.
-    fn perft<THandler, TPosition>(&self, depth: usize, pos: TPosition, handler: &THandler) -> u128
+    fn perft<THandler, TPosition>(depth: usize, pos: TPosition, handler: &THandler) -> u128
     where
         THandler: GameHandler<TPosition>,
         TPosition: GamePosition,
@@ -68,13 +68,12 @@ impl Searcher {
         } else {
             handler
                 .get_legal_moves(pos)
-                .map(|mv| self.perft(depth - 1, pos.play_move(mv), handler))
+                .map(|mv| Self::perft(depth - 1, pos.play_move(mv), handler))
                 .sum()
         }
     }
 
     pub fn perft_div_serial<THandler, TPosition>(
-        &self,
         depth: usize,
         pos: TPosition,
         handler: &THandler,
@@ -97,7 +96,7 @@ impl Searcher {
             handler
                 .get_legal_moves(pos)
                 .map(|mv| {
-                    let num = self.perft(depth - 1, pos.play_move(mv), handler);
+                    let num = Self::perft(depth - 1, pos.play_move(mv), handler);
                     println!("{:?}: {num}", mv);
                     num
                 })
@@ -105,7 +104,7 @@ impl Searcher {
         } else {
             handler
                 .get_legal_moves(pos)
-                .map(|mv| self.perft(depth - 1, pos.play_move(mv), handler))
+                .map(|mv| Self::perft(depth - 1, pos.play_move(mv), handler))
                 .sum()
         };
         println!("Nodes searched: {sum}");
@@ -115,7 +114,6 @@ impl Searcher {
     // std::marker::Sync is not enforced in the prelude traits,
     // but is required for the parallel perft implementation.
     pub fn perft_div_parallel<THandler, TPosition>(
-        &self,
         depth: usize,
         pos: TPosition,
         handler: &THandler,
@@ -141,7 +139,7 @@ impl Searcher {
                 .collect::<Vec<_>>()
                 .par_iter()
                 .map(|&mv| {
-                    let num = self.perft(depth - 1, pos.play_move(mv), handler);
+                    let num = Self::perft(depth - 1, pos.play_move(mv), handler);
                     println!("{:?}: {num}", mv);
                     num
                 })
@@ -151,7 +149,7 @@ impl Searcher {
                 .get_legal_moves(pos)
                 .collect::<Vec<_>>()
                 .par_iter()
-                .map(|&mv| self.perft(depth - 1, pos.play_move(mv), handler))
+                .map(|&mv| Self::perft(depth - 1, pos.play_move(mv), handler))
                 .sum()
         };
         println!("Nodes searched: {sum}");

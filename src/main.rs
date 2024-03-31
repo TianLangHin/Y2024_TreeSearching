@@ -59,25 +59,6 @@ impl std::ops::AddAssign for AlgorithmStats {
     }
 }
 
-fn test_stockman_tree() {
-    let handler = StockmanHandler::new(());
-    let mut nodes = vec![StockmanPos::startpos(())];
-    while !nodes.is_empty() {
-        dbg!(&nodes);
-        let new_nodes = nodes
-            .clone()
-            .iter()
-            .flat_map(|&node| {
-                handler
-                    .get_legal_moves(node)
-                    .map(|mv| node.play_move(mv))
-                    .collect::<Vec<_>>()
-            })
-            .collect();
-        nodes = new_nodes;
-    }
-}
-
 fn eval_from_line<THandler, TPosition, const SIZE: usize>(
     handler: &THandler,
     initial_pos: TPosition,
@@ -379,7 +360,7 @@ fn test_algorithms_average<THandler, TPosition, const DEPTH: usize>(
             .1;
 
         if !algorithms_match {
-            println!("{}", format!("ALGORITHM MISMATCH").bright_red());
+            println!("{}", "ALGORITHM MISMATCH".bright_red());
             for i in 0..6 {
                 println!("Alg: {}, Result: {:?}", algorithm_names[i], results[i]);
             }
@@ -517,4 +498,7 @@ fn main() {
         8,
         true,
     );
+
+    println!("Perft(6) from chess start position");
+    Searcher::perft_div_parallel(6, ChessPos::startpos(()), &ChessHandler::new(()), true);
 }
