@@ -399,6 +399,180 @@ fn test_algorithms_average<THandler, TPosition, const DEPTH: usize>(
     searcher.reset_leaf_count();
 }
 
+fn output_result_table<THandler, TPosition, const DEPTH: usize>(
+    searcher: &mut Searcher,
+    position_name: &str,
+    times: usize,
+    handler_params: Vec<<THandler as GameHandler<TPosition>>::Params>,
+    startpos_params: <TPosition as GamePosition>::Params,
+    verbose: bool,
+) where
+    THandler: GameHandler<TPosition>,
+    TPosition: GamePosition,
+{
+    if handler_params.len() < times {
+        panic!("List of GameHandler parameters needs to be equal to or more than the number of iterations");
+    }
+
+    let startpos = <TPosition as GamePosition>::startpos(startpos_params);
+
+    let algorithms = (
+        root_call_ab,
+        root_call_bb,
+        root_call_pab,
+        root_call_scout,
+        root_call_pvs,
+        root_call_sss,
+    );
+
+    let algorithm_names = [
+        "AB",
+        "BB",
+        "PAB",
+        "Scout",
+        "PVS",
+        "SSS*",
+    ];
+
+    let mut stats = [
+        AlgorithmStats::new(),
+        AlgorithmStats::new(),
+        AlgorithmStats::new(),
+        AlgorithmStats::new(),
+        AlgorithmStats::new(),
+        AlgorithmStats::new(),
+    ];
+
+    if verbose {
+        println!(
+            "Running {} times: {}",
+            times.to_string().bright_cyan(),
+            position_name.bright_magenta()
+        );
+    }
+
+    let mut i: usize = 1;
+    for param in handler_params {
+        if verbose {
+            println!("Iteration {}", i.to_string().bright_cyan());
+        }
+
+        let handler = <THandler as GameHandler<TPosition>>::new(param);
+        let mut results: [Option<EvalAndPV<THandler, TPosition, DEPTH>>; 6] = [None; 6];
+
+        seq!(N in 0..6 {
+            searcher.reset_leaf_count();
+
+            let s = Instant::now();
+            let result: EvalAndPV<THandler, TPosition, DEPTH> = algorithms.N(searcher, &handler, startpos);
+            let elapsed = s.elapsed();
+
+            let recalculated_eval = eval_from_line(&handler, startpos, result.1);
+            if recalculated_eval != result.0 {
+                println!(
+                    "{}",
+                    format!(
+                        "INDIVIDUAL MISMATCH (Alg: {}, Returned Eval: {:?}, Recalc Eval: {:?}, Returned Line: {:?})",
+                        algorithm_names[N],
+                        result.0,
+                        recalculated_eval,
+                        result.1,
+                    )
+                        .bright_red(),
+                );
+            }
+            results[N] = Some(result);
+
+            stats[N] += AlgorithmStats {
+                avg_leaves: (searcher.get_leaf_count() as f64) / (times as f64),
+                avg_ms: (elapsed.as_millis() as f64) / (times as f64),
+                avg_us: (elapsed.as_micros() as f64) / (times as f64),
+                avg_ns: (elapsed.as_nanos() as f64) / (times as f64),
+            };
+
+        });
+
+        let algorithms_match = results
+            .iter()
+            .skip(1)
+            .fold(
+                (results[0], true),
+                |(previous_result, all_match), &current_result| {
+                    (
+                        previous_result,
+                        all_match && previous_result == current_result,
+                    )
+                },
+            )
+            .1;
+
+        if !algorithms_match {
+            println!("{}", "ALGORITHM MISMATCH".bright_red());
+            for i in 0..6 {
+                println!("Alg: {}, Result: {:?}", algorithm_names[i], results[i]);
+            }
+        }
+
+        i += 1;
+    }
+
+    println!("{}", algorithm_names.into_iter().collect::<Vec<_>>().join(", "));
+
+    println!(
+        "{} [leaf]: {}",
+        position_name.bright_magenta(),
+        stats
+            .iter()
+            .map(|alg_stat| {
+                format!("{:.2}", alg_stat.avg_leaves)
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+            .bright_cyan()
+    );
+
+    println!(
+        "{} [ms]: {}",
+        position_name.bright_magenta(),
+        stats
+            .iter()
+            .map(|alg_stat| {
+                format!("{:.2}", alg_stat.avg_ms)
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+            .bright_cyan()
+    );
+
+    println!(
+        "{} [us]: {}",
+        position_name.bright_magenta(),
+        stats
+            .iter()
+            .map(|alg_stat| {
+                format!("{:.2}", alg_stat.avg_us)
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+            .bright_cyan()
+    );
+
+    println!(
+        "{} [ns]: {}",
+        position_name.bright_magenta(),
+        stats
+            .iter()
+            .map(|alg_stat| {
+                format!("{:.2}", alg_stat.avg_ns)
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+            .bright_cyan()
+    );
+
+    searcher.reset_leaf_count();
+}
+
 fn main() {
     let mut searcher = Searcher::new();
 
@@ -501,4 +675,24 @@ fn main() {
 
     println!("Perft(6) from chess start position");
     Searcher::perft_div_parallel(6, ChessPos::startpos(()), &ChessHandler::new(()), true);
+
+    seq!(N in 0..24 {
+        // Tests all 6 algorithms at once, averaging their results over different seeds
+        output_result_table::<UnordIndHypTreeHandler, HypTreePos, { DEPTH_WIDTH_PAIRS[N].0 }>(
+            &mut searcher,
+            &format!("U({}, {})", DEPTH_WIDTH_PAIRS[N].1, DEPTH_WIDTH_PAIRS[N].0),
+            1000000,
+            (314159..314159 + 1000000)
+                .map(|seed| {
+                    HypTreeParams {
+                        depth: DEPTH_WIDTH_PAIRS[N].0,
+                        width: DEPTH_WIDTH_PAIRS[N].1,
+                        seed,
+                    }
+                })
+                .collect(),
+            DEPTH_WIDTH_PAIRS[N].1,
+            false,
+        );
+    });
 }
