@@ -159,23 +159,22 @@ impl Searcher {
     // Replication of algorithms described in Muszycka & Shinghal (1985).
 
     // Algorithm A.
-    pub fn branch_and_bound<THandler, TPosition, const SIZE: usize>(
+    pub fn branch_and_bound<THandler, TPosition, const MAX_DEPTH: usize>(
         &mut self,
         handler: &THandler,
         pos: TPosition,
         depth: usize,
-        max_depth: usize,
         bound: <THandler as GameHandler<TPosition>>::Eval,
-    ) -> EvalAndPV<THandler, TPosition, SIZE>
+    ) -> EvalAndPV<THandler, TPosition, MAX_DEPTH>
     where
         THandler: GameHandler<TPosition>,
         TPosition: GamePosition,
     {
-        // A node `max_depth` plies ahead of the root is considered a leaf.
+        // A node `MAX_DEPTH` plies ahead of the root is considered a leaf.
         // Statement 5.
         if depth == 0 {
             self.increment_leaf_count();
-            return (handler.evaluate(pos, depth, max_depth), [None; SIZE]);
+            return (handler.evaluate(pos, depth, MAX_DEPTH), [None; MAX_DEPTH]);
         }
 
         // Statement 4.
@@ -184,19 +183,18 @@ impl Searcher {
         if let Some(mut mv) = move_iter.next() {
             // Statement 6.
             let mut m = <THandler as GameHandler<TPosition>>::EVAL_MINIMUM;
-            let mut pv = [None; SIZE];
+            let mut pv = [None; MAX_DEPTH];
 
             loop {
                 // Statement 9.
-                let (t, mut line) = self.branch_and_bound::<THandler, TPosition, SIZE>(
+                let (t, mut line) = self.branch_and_bound::<THandler, TPosition, MAX_DEPTH>(
                     handler,
                     pos.play_move(mv),
                     depth - 1,
-                    max_depth,
                     -m,
                 );
                 let t = -t;
-                line[max_depth - depth] = Some(mv);
+                line[MAX_DEPTH - depth] = Some(mv);
 
                 if t > m {
                     m = t;
@@ -219,29 +217,28 @@ impl Searcher {
         } else {
             // Statement 5.
             self.increment_leaf_count();
-            (handler.evaluate(pos, depth, max_depth), [None; SIZE])
+            (handler.evaluate(pos, depth, MAX_DEPTH), [None; MAX_DEPTH])
         }
     }
 
     // Algorithm B.
-    pub fn alpha_beta<THandler, TPosition, const SIZE: usize>(
+    pub fn alpha_beta<THandler, TPosition, const MAX_DEPTH: usize>(
         &mut self,
         handler: &THandler,
         pos: TPosition,
         depth: usize,
-        max_depth: usize,
         alpha: <THandler as GameHandler<TPosition>>::Eval,
         beta: <THandler as GameHandler<TPosition>>::Eval,
-    ) -> EvalAndPV<THandler, TPosition, SIZE>
+    ) -> EvalAndPV<THandler, TPosition, MAX_DEPTH>
     where
         THandler: GameHandler<TPosition>,
         TPosition: GamePosition,
     {
-        // A node `max_depth` plies ahead of the root is considered a leaf.
+        // A node `MAX_DEPTH` plies ahead of the root is considered a leaf.
         // Statement 5.
         if depth == 0 {
             self.increment_leaf_count();
-            return (handler.evaluate(pos, depth, max_depth), [None; SIZE]);
+            return (handler.evaluate(pos, depth, MAX_DEPTH), [None; MAX_DEPTH]);
         }
 
         // Statement 4.
@@ -250,20 +247,19 @@ impl Searcher {
         if let Some(mut mv) = move_iter.next() {
             // Statement 6.
             let mut m = alpha;
-            let mut pv = [None; SIZE];
+            let mut pv = [None; MAX_DEPTH];
 
             loop {
                 // Statement 9.
-                let (t, mut line) = self.alpha_beta::<THandler, TPosition, SIZE>(
+                let (t, mut line) = self.alpha_beta::<THandler, TPosition, MAX_DEPTH>(
                     handler,
                     pos.play_move(mv),
                     depth - 1,
-                    max_depth,
                     -beta,
                     -m,
                 );
                 let t = -t;
-                line[max_depth - depth] = Some(mv);
+                line[MAX_DEPTH - depth] = Some(mv);
 
                 if t > m {
                     m = t;
@@ -286,27 +282,26 @@ impl Searcher {
         } else {
             // Statement 5.
             self.increment_leaf_count();
-            (handler.evaluate(pos, depth, max_depth), [None; SIZE])
+            (handler.evaluate(pos, depth, MAX_DEPTH), [None; MAX_DEPTH])
         }
     }
 
     // Algorithm C.
-    pub fn p_alpha_beta<THandler, TPosition, const SIZE: usize>(
+    pub fn p_alpha_beta<THandler, TPosition, const MAX_DEPTH: usize>(
         &mut self,
         handler: &THandler,
         pos: TPosition,
         depth: usize,
-        max_depth: usize,
-    ) -> EvalAndPV<THandler, TPosition, SIZE>
+    ) -> EvalAndPV<THandler, TPosition, MAX_DEPTH>
     where
         THandler: GameHandler<TPosition>,
         TPosition: GamePosition,
     {
-        // A node `max_depth` plies ahead of the root is considered a leaf.
+        // A node `MAX_DEPTH` plies ahead of the root is considered a leaf.
         // Statement 5.
         if depth == 0 {
             self.increment_leaf_count();
-            return (handler.evaluate(pos, depth, max_depth), [None; SIZE]);
+            return (handler.evaluate(pos, depth, MAX_DEPTH), [None; MAX_DEPTH]);
         }
 
         // Statement 4.
@@ -314,14 +309,13 @@ impl Searcher {
 
         if let Some(mv) = move_iter.next() {
             // Statement 6.
-            let (mut m, mut pv) = self.p_alpha_beta::<THandler, TPosition, SIZE>(
+            let (mut m, mut pv) = self.p_alpha_beta::<THandler, TPosition, MAX_DEPTH>(
                 handler,
                 pos.play_move(mv),
                 depth - 1,
-                max_depth,
             );
             m = -m;
-            pv[max_depth - depth] = Some(mv);
+            pv[MAX_DEPTH - depth] = Some(mv);
 
             // Statement 7.
             for mv in move_iter {
@@ -329,11 +323,10 @@ impl Searcher {
 
                 // Statement 9.
                 let t = -self
-                    .f_alpha_beta::<THandler, TPosition, SIZE>(
+                    .f_alpha_beta::<THandler, TPosition, MAX_DEPTH>(
                         handler,
                         next_pos,
                         depth - 1,
-                        max_depth,
                         -m - <THandler as GameHandler<TPosition>>::EVAL_EPSILON,
                         -m,
                     )
@@ -346,16 +339,15 @@ impl Searcher {
                     // `m = -alphabeta(p_i, -MAXINT, -t);` as opposed to
                     // `m = -falphabeta(p_i, -MAXINT, -t);`. Fishburn & Finkel (1980)
                     // originally describe this algorithm correctly.
-                    let (t, mut line) = self.f_alpha_beta::<THandler, TPosition, SIZE>(
+                    let (t, mut line) = self.f_alpha_beta::<THandler, TPosition, MAX_DEPTH>(
                         handler,
                         next_pos,
                         depth - 1,
-                        max_depth,
                         <THandler as GameHandler<TPosition>>::EVAL_MINIMUM,
                         -t,
                     );
                     m = -t;
-                    line[max_depth - depth] = Some(mv);
+                    line[MAX_DEPTH - depth] = Some(mv);
                     pv = line;
                 }
             }
@@ -364,28 +356,27 @@ impl Searcher {
         } else {
             // Statement 5.
             self.increment_leaf_count();
-            (handler.evaluate(pos, depth, max_depth), [None; SIZE])
+            (handler.evaluate(pos, depth, MAX_DEPTH), [None; MAX_DEPTH])
         }
     }
 
-    pub fn f_alpha_beta<THandler, TPosition, const SIZE: usize>(
+    pub fn f_alpha_beta<THandler, TPosition, const MAX_DEPTH: usize>(
         &mut self,
         handler: &THandler,
         pos: TPosition,
         depth: usize,
-        max_depth: usize,
         alpha: <THandler as GameHandler<TPosition>>::Eval,
         beta: <THandler as GameHandler<TPosition>>::Eval,
-    ) -> EvalAndPV<THandler, TPosition, SIZE>
+    ) -> EvalAndPV<THandler, TPosition, MAX_DEPTH>
     where
         THandler: GameHandler<TPosition>,
         TPosition: GamePosition,
     {
-        // A node `max_depth` plies ahead of the root is considered a leaf.
+        // A node `MAX_DEPTH` plies ahead of the root is considered a leaf.
         // Statement 5.
         if depth == 0 {
             self.increment_leaf_count();
-            return (handler.evaluate(pos, depth, max_depth), [None; SIZE]);
+            return (handler.evaluate(pos, depth, MAX_DEPTH), [None; MAX_DEPTH]);
         }
 
         // Statement 4.
@@ -394,20 +385,19 @@ impl Searcher {
         if let Some(mut mv) = move_iter.next() {
             // Statement 6.
             let mut m = <THandler as GameHandler<TPosition>>::EVAL_MINIMUM;
-            let mut pv = [None; SIZE];
+            let mut pv = [None; MAX_DEPTH];
 
             loop {
                 // Statement 9.
-                let (t, mut line) = self.f_alpha_beta::<THandler, TPosition, SIZE>(
+                let (t, mut line) = self.f_alpha_beta::<THandler, TPosition, MAX_DEPTH>(
                     handler,
                     pos.play_move(mv),
                     depth - 1,
-                    max_depth,
                     -beta,
                     -std::cmp::max(m, alpha),
                 );
                 let t = -t;
-                line[max_depth - depth] = Some(mv);
+                line[MAX_DEPTH - depth] = Some(mv);
 
                 if t > m {
                     m = t;
@@ -430,29 +420,28 @@ impl Searcher {
         } else {
             // Statement 5.
             self.increment_leaf_count();
-            (handler.evaluate(pos, depth, max_depth), [None; SIZE])
+            (handler.evaluate(pos, depth, MAX_DEPTH), [None; MAX_DEPTH])
         }
     }
 
     // Algorithm D.
-    pub fn pvs<THandler, TPosition, const SIZE: usize>(
+    pub fn pvs<THandler, TPosition, const MAX_DEPTH: usize>(
         &mut self,
         handler: &THandler,
         pos: TPosition,
         depth: usize,
-        max_depth: usize,
         alpha: <THandler as GameHandler<TPosition>>::Eval,
         beta: <THandler as GameHandler<TPosition>>::Eval,
-    ) -> EvalAndPV<THandler, TPosition, SIZE>
+    ) -> EvalAndPV<THandler, TPosition, MAX_DEPTH>
     where
         THandler: GameHandler<TPosition>,
         TPosition: GamePosition,
     {
-        // A node `max_depth` plies ahead of the root is considered a leaf.
+        // A node `MAX_DEPTH` plies ahead of the root is considered a leaf.
         // Statement 5.
         if depth == 0 {
             self.increment_leaf_count();
-            return (handler.evaluate(pos, depth, max_depth), [None; SIZE]);
+            return (handler.evaluate(pos, depth, MAX_DEPTH), [None; MAX_DEPTH]);
         }
 
         // Statement 4.
@@ -460,16 +449,15 @@ impl Searcher {
 
         if let Some(mv) = move_iter.next() {
             // Statement 6.
-            let (mut m, mut pv) = self.pvs::<THandler, TPosition, SIZE>(
+            let (mut m, mut pv) = self.pvs::<THandler, TPosition, MAX_DEPTH>(
                 handler,
                 pos.play_move(mv),
                 depth - 1,
-                max_depth,
                 -beta,
                 -alpha,
             );
             m = -m;
-            pv[max_depth - depth] = Some(mv);
+            pv[MAX_DEPTH - depth] = Some(mv);
 
             // Statement 7.
             if m < beta {
@@ -482,11 +470,10 @@ impl Searcher {
 
                     // Statement 11.
                     let t = -self
-                        .pvs::<THandler, TPosition, SIZE>(
+                        .pvs::<THandler, TPosition, MAX_DEPTH>(
                             handler,
                             next_pos,
                             depth - 1,
-                            max_depth,
                             -bound - <THandler as GameHandler<TPosition>>::EVAL_EPSILON,
                             -bound,
                         )
@@ -495,16 +482,15 @@ impl Searcher {
                     // Statement 12.
                     if t > m {
                         // Statement 13.
-                        let (value, mut line) = self.pvs::<THandler, TPosition, SIZE>(
+                        let (value, mut line) = self.pvs::<THandler, TPosition, MAX_DEPTH>(
                             handler,
                             next_pos,
                             depth - 1,
-                            max_depth,
                             -beta,
                             -t,
                         );
                         m = -value;
-                        line[max_depth - depth] = Some(mv);
+                        line[MAX_DEPTH - depth] = Some(mv);
                         pv = line;
                     }
                     // Statement 14.
@@ -518,27 +504,26 @@ impl Searcher {
         } else {
             // Statement 5.
             self.increment_leaf_count();
-            (handler.evaluate(pos, depth, max_depth), [None; SIZE])
+            (handler.evaluate(pos, depth, MAX_DEPTH), [None; MAX_DEPTH])
         }
     }
 
     // Algorithm E.
-    pub fn scout<THandler, TPosition, const SIZE: usize>(
+    pub fn scout<THandler, TPosition, const MAX_DEPTH: usize>(
         &mut self,
         handler: &THandler,
         pos: TPosition,
         depth: usize,
-        max_depth: usize,
-    ) -> EvalAndPV<THandler, TPosition, SIZE>
+    ) -> EvalAndPV<THandler, TPosition, MAX_DEPTH>
     where
         THandler: GameHandler<TPosition>,
         TPosition: GamePosition,
     {
-        // A node `max_depth` plies ahead of the root is considered a leaf.
+        // A node `MAX_DEPTH` plies ahead of the root is considered a leaf.
         // Statement 5.
         if depth == 0 {
             self.increment_leaf_count();
-            return (handler.evaluate(pos, depth, max_depth), [None; SIZE]);
+            return (handler.evaluate(pos, depth, MAX_DEPTH), [None; MAX_DEPTH]);
         }
 
         // Statement 4.
@@ -546,14 +531,13 @@ impl Searcher {
 
         if let Some(mv) = move_iter.next() {
             // Statement 6.
-            let (mut m, mut pv) = self.scout::<THandler, TPosition, SIZE>(
+            let (mut m, mut pv) = self.scout::<THandler, TPosition, MAX_DEPTH>(
                 handler,
                 pos.play_move(mv),
                 depth - 1,
-                max_depth,
             );
             m = -m;
-            pv[max_depth - depth] = Some(mv);
+            pv[MAX_DEPTH - depth] = Some(mv);
 
             // Statement 7.
             let op = true;
@@ -567,18 +551,17 @@ impl Searcher {
                     handler,
                     next_pos,
                     depth - 1,
-                    max_depth,
+                    MAX_DEPTH,
                     -m,
                     !op,
                 ) {
-                    let (new_m, mut line) = self.scout::<THandler, TPosition, SIZE>(
+                    let (new_m, mut line) = self.scout::<THandler, TPosition, MAX_DEPTH>(
                         handler,
                         next_pos,
                         depth - 1,
-                        max_depth,
                     );
                     let new_m = -new_m;
-                    line[max_depth - depth] = Some(mv);
+                    line[MAX_DEPTH - depth] = Some(mv);
                     m = new_m;
                     pv = line;
                 }
@@ -588,7 +571,7 @@ impl Searcher {
         } else {
             // Statement 5.
             self.increment_leaf_count();
-            (handler.evaluate(pos, depth, max_depth), [None; SIZE])
+            (handler.evaluate(pos, depth, MAX_DEPTH), [None; MAX_DEPTH])
         }
     }
 
@@ -654,13 +637,12 @@ impl Searcher {
     }
 
     // Algorithm F.
-    pub fn sss<THandler, TPosition, const SIZE: usize>(
+    pub fn sss<THandler, TPosition, const MAX_DEPTH: usize>(
         &mut self,
         handler: &THandler,
         root: TPosition,
         depth: usize,
-        max_depth: usize,
-    ) -> EvalAndPV<THandler, TPosition, SIZE>
+    ) -> EvalAndPV<THandler, TPosition, MAX_DEPTH>
     where
         THandler: GameHandler<TPosition>,
         TPosition: GamePosition,
@@ -808,7 +790,7 @@ impl Searcher {
                 TPosition,
                 <THandler as GameHandler<TPosition>>::Eval,
                 <TPosition as GamePosition>::Move,
-                SIZE,
+                MAX_DEPTH,
             >,
         > = BinaryHeap::new();
 
@@ -816,10 +798,10 @@ impl Searcher {
             node: root,
             merit: (
                 <THandler as GameHandler<TPosition>>::EVAL_MAXIMUM,
-                [None; SIZE],
+                [None; MAX_DEPTH],
             ),
             depth,
-            line: [None; SIZE],
+            line: [None; MAX_DEPTH],
             iteration: 0,
         });
 
@@ -834,23 +816,23 @@ impl Searcher {
                     line: mut l,
                     iteration: _,
                 } => {
-                    if d == max_depth {
+                    if d == MAX_DEPTH {
                         return (h, pv);
                     }
                     let mut parent = root;
-                    let path_length = max_depth - d - 1;
+                    let path_length = MAX_DEPTH - d - 1;
                     for mv in l.iter().take(path_length) {
                         parent = parent.play_move(mv.unwrap());
                     }
-                    if state.is_max_player(max_depth) {
+                    if state.is_max_player(MAX_DEPTH) {
                         if let Some(next_move) = handler
                             .get_legal_moves(parent)
                             .skip_while(|&mv| parent.play_move(mv) != n)
                             .nth(1)
                         {
                             l[path_length] = Some(next_move);
-                            for i in path_length + 1..max_depth {
-                                line[i] = None;
+                            for i in path_length + 1..MAX_DEPTH {
+                                l[i] = None;
                             }
                             // Case 2.
                             open.push(State::Live {
@@ -900,12 +882,12 @@ impl Searcher {
                     if d == 0 {
                         // To account for the negamax construct in conjunction with SSS* node evaluation.
                         self.increment_leaf_count();
-                        let eval = if ((max_depth - depth) & 1) == 0 {
-                            handler.evaluate(n, depth, max_depth)
+                        let eval = if ((MAX_DEPTH - depth) & 1) == 0 {
+                            handler.evaluate(n, depth, MAX_DEPTH)
                         } else {
-                            -handler.evaluate(n, depth, max_depth)
+                            -handler.evaluate(n, depth, MAX_DEPTH)
                         };
-                        // Extension of Case 4. `max_depth` plies from root is considered leaf.
+                        // Extension of Case 4. `MAX_DEPTH` plies from root is considered leaf.
                         open.push(State::Solved {
                             node: n,
                             merit: if h < eval { (h, pv) } else { (eval, l) },
@@ -915,8 +897,8 @@ impl Searcher {
                         });
                     } else if let Some(first_move) = legal_moves.next() {
                         let mut line = l;
-                        line[max_depth - d] = Some(first_move);
-                        if state.is_max_player(max_depth) {
+                        line[MAX_DEPTH - d] = Some(first_move);
+                        if state.is_max_player(MAX_DEPTH) {
                             // Case 6.
                             open.push(State::Live {
                                 node: n.play_move(first_move),
@@ -926,7 +908,7 @@ impl Searcher {
                                 iteration: i,
                             });
                             for mv in legal_moves {
-                                line[max_depth - d] = Some(mv);
+                                line[MAX_DEPTH - d] = Some(mv);
                                 open.push(State::Live {
                                     node: n.play_move(mv),
                                     merit: (h, pv),
@@ -948,10 +930,10 @@ impl Searcher {
                     } else {
                         // To account for the negamax construct in conjunction with SSS* node evaluation.
                         self.increment_leaf_count();
-                        let eval = if ((max_depth - depth) & 1) == 0 {
-                            handler.evaluate(n, depth, max_depth)
+                        let eval = if ((MAX_DEPTH - depth) & 1) == 0 {
+                            handler.evaluate(n, depth, MAX_DEPTH)
                         } else {
-                            -handler.evaluate(n, depth, max_depth)
+                            -handler.evaluate(n, depth, MAX_DEPTH)
                         };
                         // Next legal move is `None` on first attempt: leaf node. Thus, Case 4.
                         open.push(State::Solved {

@@ -92,10 +92,9 @@ where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
-    searcher.branch_and_bound(
+    searcher.branch_and_bound::<THandler, TPosition, DEPTH>(
         handler,
         root,
-        DEPTH,
         DEPTH,
         <THandler as GameHandler<TPosition>>::EVAL_MAXIMUM,
     )
@@ -110,10 +109,9 @@ where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
-    searcher.alpha_beta(
+    searcher.alpha_beta::<THandler, TPosition, DEPTH>(
         handler,
         root,
-        DEPTH,
         DEPTH,
         <THandler as GameHandler<TPosition>>::EVAL_MINIMUM,
         <THandler as GameHandler<TPosition>>::EVAL_MAXIMUM,
@@ -129,7 +127,7 @@ where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
-    searcher.p_alpha_beta(handler, root, DEPTH, DEPTH)
+    searcher.p_alpha_beta(handler, root, DEPTH)
 }
 
 fn root_call_pvs<THandler, TPosition, const DEPTH: usize>(
@@ -145,7 +143,6 @@ where
         handler,
         root,
         DEPTH,
-        DEPTH,
         <THandler as GameHandler<TPosition>>::EVAL_MINIMUM,
         <THandler as GameHandler<TPosition>>::EVAL_MAXIMUM,
     )
@@ -160,7 +157,7 @@ where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
-    searcher.scout(handler, root, DEPTH, DEPTH)
+    searcher.scout(handler, root, DEPTH)
 }
 
 fn root_call_sss<THandler, TPosition, const DEPTH: usize>(
@@ -172,7 +169,7 @@ where
     THandler: GameHandler<TPosition>,
     TPosition: GamePosition,
 {
-    searcher.sss(handler, root, DEPTH, DEPTH)
+    searcher.sss(handler, root, DEPTH)
 }
 
 fn raw_moves_display<T, const SIZE: usize>(move_list: [Option<T>; SIZE]) -> String
