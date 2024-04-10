@@ -12,12 +12,12 @@
 // this trait definition forces `Copy` to be implemented.
 // Additionally, `Eq` is to enable functionalities such as verification of algorithm correctness
 // and for the utility of checking whether a position has already been searched, among others.
-pub trait GamePosition: Clone + Copy + std::fmt::Debug + PartialEq + Eq {
+pub trait GamePosition: Copy + std::fmt::Debug + Eq {
 
     // The transition from one game state to another is represented by a `Move`.
     // `Copy` is enforced to allow for game lines to be efficiently generated and recorded.
     // `Eq` is enforced to allow for the functionality of checking whether to game paths are identical.
-    type Move: Clone + Copy + std::fmt::Debug + PartialEq + Eq;
+    type Move: Copy + std::fmt::Debug + Eq;
 
     // When initialising a game state, some parameters may be needed as input.
     // The `Params` associated type allows information of a structure specific
@@ -67,12 +67,9 @@ where
     // for usage such as window adjustment.
     // `Neg` is enforced to adopt the negamax framework, relying on the
     // two-player zero-sum turn-based perfect-information properties of this game tree.
-    type Eval: Clone
-        + Copy
+    type Eval: Copy
         + std::fmt::Debug
-        + PartialEq
         + Eq
-        + PartialOrd
         + Ord
         + std::ops::Add<Output = Self::Eval>
         + std::ops::Sub<Output = Self::Eval>
