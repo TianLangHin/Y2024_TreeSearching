@@ -27,3 +27,11 @@ Currently, the following game trees are implemented in `src/games`.
 * A representation of Chess using bitboards (particularly magic lookups), defined in `chess.rs`.
 * A representation of a uniform game tree of constant branching factor 2, and has randomly assigned node values based on the `rand_chacha` crate, defined in `uniform_2b_wide.rs`.
 * A representation of a uniform game tree with node values assigned by the `unordered-independent` scheme as used in Muszycka and Shinghal (1985), using the `rand_chacha` crate in conjunction with the Fisher-Yates Shuffle, defined in `hypothetical_tree.rs`.
+
+## Main Program
+
+The driver code in `src/main.rs` tests each of the game tree topologies with each of the six algorithms,
+and the final 24 entries are averaged results of 1,000,000 test cases for each of the 24 settings
+that Muszycka and Shinghal (1985) test.
+For each setting, the average number of leaf nodes evaluated and average time used is outputted,
+with resolutions at milliseconds, microseconds and nanoseconds.
